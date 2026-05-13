@@ -5,6 +5,7 @@ import {
   markerTypesForDay,
   seoulYmd,
 } from "../eventLogic";
+import DropdownSelect from "./DropdownSelect";
 
 const WEEK = ["일", "월", "화", "수", "목", "금", "토"];
 
@@ -27,6 +28,12 @@ const YEAR_OPTS = (() => {
   for (let i = y0 - 6; i <= y0 + 7; i++) arr.push(i);
   return arr;
 })();
+
+const YEAR_OPTIONS = YEAR_OPTS.map((y) => ({ value: y, label: `${y}년` }));
+const MONTH_OPTIONS = Array.from({ length: 12 }, (_, i) => ({
+  value: i + 1,
+  label: `${i + 1}월`,
+}));
 
 type Props = {
   year: number;
@@ -60,36 +67,22 @@ export default function CalendarMonth({
     <div className="cal-card">
       <div className="cal-card-top">
         <div className="cal-ym-selects">
-          <label className="sr-only" htmlFor="cal-year">
-            연도
-          </label>
-          <select
+          <DropdownSelect
             id="cal-year"
-            className="cal-ym-select"
+            ariaLabel="연도 선택"
             value={year}
-            onChange={(e) => onYearChange(Number(e.target.value))}
-          >
-            {YEAR_OPTS.map((y) => (
-              <option key={y} value={y}>
-                {y}년
-              </option>
-            ))}
-          </select>
-          <label className="sr-only" htmlFor="cal-month">
-            월
-          </label>
-          <select
+            options={YEAR_OPTIONS}
+            onChange={onYearChange}
+            variant="year"
+          />
+          <DropdownSelect
             id="cal-month"
-            className="cal-ym-select cal-ym-select--month"
+            ariaLabel="월 선택"
             value={month}
-            onChange={(e) => onMonthChange(Number(e.target.value))}
-          >
-            {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-              <option key={m} value={m}>
-                {m}월
-              </option>
-            ))}
-          </select>
+            options={MONTH_OPTIONS}
+            onChange={onMonthChange}
+            variant="month"
+          />
         </div>
         <button type="button" className="cal-today-pill" onClick={onJumpToday}>
           오늘

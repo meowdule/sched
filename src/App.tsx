@@ -4,6 +4,10 @@ import type { GitHubConfig, ShiftEvent } from "./types";
 import { fetchRepoFileJson, saveRepoFileJson } from "./github";
 import {
   buildCycleEvents,
+  createDayShift,
+  createLeisure,
+  createNightShift,
+  createOff,
   hasOverlapInRange,
   seoulYmd,
 } from "./eventLogic";
@@ -11,6 +15,8 @@ import CalendarMonth from "./components/CalendarMonth";
 import DaySheet from "./components/DaySheet";
 import EventEditor from "./components/EventEditor";
 import SettingsPanel, { type StoredSettings } from "./components/SettingsPanel";
+import SettingsMenuSheet from "./components/SettingsMenuSheet";
+import PickDateModal from "./components/PickDateModal";
 import CycleModal from "./components/CycleModal";
 
 const LS = {
@@ -68,6 +74,23 @@ function isEventList(x: unknown): x is ShiftEvent[] {
   return Array.isArray(x);
 }
 
+type PickKind = "DAY" | "NIGHT" | "OFF" | "LEISURE_PARTY" | "LEISURE_GAME";
+
+function pickDateTitle(kind: PickKind): string {
+  switch (kind) {
+    case "DAY":
+      return "주간 넣을 날짜";
+    case "NIGHT":
+      return "야간 넣을 날짜";
+    case "OFF":
+      return "비번 넣을 날짜";
+    case "LEISURE_PARTY":
+      return "노는 시간(파티) 날짜";
+    case "LEISURE_GAME":
+      return "노는 시간(게임) 날짜";
+  }
+}
+
 export default function App() {
   const defaults = useMemo(() => envDefaults(), []);
   const [settings, setSettings] = useState<StoredSettings>(() =>
@@ -87,10 +110,14 @@ export default function App() {
   const [err, setErr] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [editing, setEditing] = useState<ShiftEvent | null>(null);
+  const [settingsMenuOpen, setSettingsMenuOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [cycleOpen, setCycleOpen] = useState(false);
+  const [pickKind, setPickKind] = useState<PickKind | null>(null);
 
   const cfg = useMemo(() => toCfg(settings), [settings]);
+
+  const defaultPickYmd = selected ?? seoulYmd(new Date());
 
   const refresh = useCallback(async () => {
     const c = toCfg(settings);
@@ -125,7 +152,7 @@ export default function App() {
     async (next: ShiftEvent[], message: string) => {
       const c = toCfg(settings);
       if (!c) {
-        alert("설정에서 GitHub 토큰과 저장소 정보를 입력해 주세요.");
+        alert("설정(토큰 · 저장소)에서 GitHub 정보를 입력해 주세요.");
         return false;
       }
       setLoading(true);
@@ -204,23 +231,44 @@ export default function App() {
     const extra = buildCycleEvents(startYmd);
     const next = [...events, ...extra];
     const ok = await persist(next, "주기 6일 등록");
-    if (ok) {
-      setCycleOpen(false);
-      setSelected(null);
+    if (ok) setCycleOpen(false);
+  };
+
+  const confirmPickDate = async (ymd: string) => {
+    if (!pickKind) return;
+    let ev: ShiftEvent | null = null;
+    switch (pickKind) {
+      case "DAY":
+        ev = createDayShift(ymd);
+        break;
+      case "NIGHT":
+        ev = createNightShift(ymd);
+        break;
+      case "OFF":
+        ev = createOff(ymd);
+        break;
+      case "LEISURE_PARTY":
+        ev = createLeisure(ymd, "party");
+        break;
+      case "LEISURE_GAME":
+        ev = createLeisure(ymd, "game");
+        break;
     }
+    setPickKind(null);
+    if (ev) await handleAdd(ev);
   };
 
   return (
     <div className="app-shell">
       <header className="app-header">
         <div className="month-title" style={{ fontSize: "1.1rem" }}>
-          교대 일정
+          일정
         </div>
         <button
           type="button"
           className="icon-btn"
-          aria-label="설정"
-          onClick={() => setSettingsOpen(true)}
+          aria-label="추가 및 설정"
+          onClick={() => setSettingsMenuOpen(true)}
         >
           <Settings size={22} />
         </button>
@@ -233,9 +281,8 @@ export default function App() {
       )}
       {!cfg && (
         <p className="hint" style={{ marginBottom: 10 }}>
-          오른쪽 상단 설정에서 GitHub 토큰과 저장소(owner/repo)를 입력하면 이
-          기기에서 바로 저장됩니다. 빌드 시 env에 기본 저장소를 넣어 둘 수
-          있습니다.
+          톱니바퀴 → 「토큰 · 저장소 설정」에서 GitHub 토큰을 넣으면 이 기기에서
+          바로 저장됩니다.
         </p>
       )}
       <CalendarMonth
@@ -252,9 +299,7 @@ export default function App() {
           ymd={selected}
           events={events}
           onClose={() => setSelected(null)}
-          onAdd={(ev) => void handleAdd(ev)}
           onOpenEvent={(ev) => setEditing(ev)}
-          onOpenCycle={() => setCycleOpen(true)}
         />
       )}
       {editing && (
@@ -265,6 +310,45 @@ export default function App() {
           onDelete={(id) => void handleDelete(id)}
         />
       )}
+      <SettingsMenuSheet
+        open={settingsMenuOpen}
+        onClose={() => setSettingsMenuOpen(false)}
+        onDay={() => {
+          setSettingsMenuOpen(false);
+          setPickKind("DAY");
+        }}
+        onNight={() => {
+          setSettingsMenuOpen(false);
+          setPickKind("NIGHT");
+        }}
+        onOff={() => {
+          setSettingsMenuOpen(false);
+          setPickKind("OFF");
+        }}
+        onCycle={() => {
+          setSettingsMenuOpen(false);
+          setCycleOpen(true);
+        }}
+        onLeisureParty={() => {
+          setSettingsMenuOpen(false);
+          setPickKind("LEISURE_PARTY");
+        }}
+        onLeisureGame={() => {
+          setSettingsMenuOpen(false);
+          setPickKind("LEISURE_GAME");
+        }}
+        onGithub={() => {
+          setSettingsMenuOpen(false);
+          setSettingsOpen(true);
+        }}
+      />
+      <PickDateModal
+        open={pickKind !== null}
+        title={pickKind ? pickDateTitle(pickKind) : ""}
+        initialYmd={defaultPickYmd}
+        onClose={() => setPickKind(null)}
+        onConfirm={(ymd) => void confirmPickDate(ymd)}
+      />
       <SettingsPanel
         open={settingsOpen}
         value={settings}
@@ -277,7 +361,7 @@ export default function App() {
       />
       <CycleModal
         open={cycleOpen}
-        anchorYmd={selected ?? seoulYmd(new Date())}
+        anchorYmd={defaultPickYmd}
         onClose={() => setCycleOpen(false)}
         onConfirm={(start) => void handleCycle(start)}
       />

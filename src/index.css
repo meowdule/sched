@@ -204,6 +204,66 @@ button {
   box-shadow: 0 -8px 30px rgb(0 0 0 / 12%);
 }
 
+.sheet--events-only {
+  max-height: 48dvh;
+}
+
+.sheet--settings-menu {
+  max-height: 78dvh;
+}
+
+.day-events-scroll {
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  margin-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.settings-menu-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.settings-menu-btn {
+  padding: 14px 8px;
+  border-radius: 14px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: var(--text);
+}
+
+.settings-menu-btn:active {
+  filter: brightness(0.97);
+}
+
+.settings-menu-leisure {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.settings-menu-token {
+  width: 100%;
+  margin-top: 4px;
+  padding: 14px;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.settings-menu-token:active {
+  background: var(--bg);
+}
+
 .sheet-handle {
   width: 36px;
   height: 4px;
@@ -369,7 +429,7 @@ button {
 }
 
 .toolbar-cycle {
-  margin-top: 14px;
+  margin-top: 10px;
 }
 
 .cycle-btn {

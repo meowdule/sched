@@ -268,18 +268,44 @@ export function updateEventTimes(
   };
 }
 
+/** 서울 달력 기준 M월 d일 (필요 시 연도 포함) */
+function formatSeoulDateLabel(ymd: string, includeYear: boolean): string {
+  const anchor = parseISO(`${ymd}T12:00:00+09:00`);
+  return new Intl.DateTimeFormat("ko-KR", {
+    timeZone: "Asia/Seoul",
+    ...(includeYear ? { year: "numeric" } : {}),
+    month: "long",
+    day: "numeric",
+  }).format(anchor);
+}
+
 export function formatTimeRange(ev: ShiftEvent): string {
   if (ev.type === "OFF") return "시간 없음";
   if (!ev.start || !ev.end) return "";
   const s = parseISO(ev.start);
   const e = parseISO(ev.end);
+  const sy = seoulYmd(s);
+  const ey = seoulYmd(e);
   const tf = new Intl.DateTimeFormat("ko-KR", {
     timeZone: "Asia/Seoul",
     hour: "numeric",
     minute: "2-digit",
     hour12: true,
   });
-  return `${tf.format(s)} – ${tf.format(e)}`;
+  const tStart = tf.format(s);
+  const tEnd = tf.format(e);
+
+  if (sy === ey) {
+    const yNow = Number(seoulYmd(new Date()).slice(0, 4));
+    const yEv = Number(sy.slice(0, 4));
+    const includeYear = yEv !== yNow;
+    return `${formatSeoulDateLabel(sy, includeYear)} ${tStart} – ${tEnd}`;
+  }
+
+  const y1 = Number(sy.slice(0, 4));
+  const y2 = Number(ey.slice(0, 4));
+  const includeYear = y1 !== y2;
+  return `${formatSeoulDateLabel(sy, includeYear)} ${tStart} – ${formatSeoulDateLabel(ey, includeYear)} ${tEnd}`;
 }
 
 /** 구버전 LEISURE JSON 호환 */

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import type { ShiftEvent } from "../types";
-import { labelForType, nowIso } from "../eventLogic";
+import { eventDisplayTitle, labelForType, nowIso } from "../eventLogic";
 import { datetimeLocalToSeoulIso, isoToDatetimeLocal } from "../datetimeLocal";
 
 type Props = {
@@ -23,14 +23,20 @@ export default function EventEditor({
   const [end, setEnd] = useState(
     event.end ? isoToDatetimeLocal(event.end) : ""
   );
+  const [title, setTitle] = useState(event.title ?? "");
 
   useEffect(() => {
     setOffDate(event.date ?? "");
     setStart(event.start ? isoToDatetimeLocal(event.start) : "");
     setEnd(event.end ? isoToDatetimeLocal(event.end) : "");
+    setTitle(event.title ?? "");
   }, [event]);
 
   const isOff = event.type === "OFF";
+  const isCustom = event.type === "CUSTOM";
+  const modalTitle = isCustom
+    ? `일정 · ${eventDisplayTitle(event)}`
+    : `${labelForType(event.type)} 수정`;
 
   return (
     <>
@@ -43,7 +49,7 @@ export default function EventEditor({
       />
       <div className="modal" style={{ zIndex: 60 }}>
         <div className="modal-card">
-          <div className="modal-title">{labelForType(event.type)} 수정</div>
+          <div className="modal-title">{modalTitle}</div>
           {isOff ? (
             <div className="field">
               <label htmlFor="off-date">날짜</label>
@@ -56,6 +62,18 @@ export default function EventEditor({
             </div>
           ) : (
             <>
+              {isCustom && (
+                <div className="field">
+                  <label htmlFor="ev-title">제목</label>
+                  <input
+                    id="ev-title"
+                    type="text"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="데이트"
+                  />
+                </div>
+              )}
               <div className="field">
                 <label htmlFor="ev-start">시작</label>
                 <input
@@ -88,6 +106,14 @@ export default function EventEditor({
                   onSave({
                     ...event,
                     date: offDate,
+                    updatedAt: nowIso(),
+                  });
+                } else if (isCustom) {
+                  onSave({
+                    ...event,
+                    title: title.trim() || "데이트",
+                    start: datetimeLocalToSeoulIso(start),
+                    end: datetimeLocalToSeoulIso(end),
                     updatedAt: nowIso(),
                   });
                 } else {

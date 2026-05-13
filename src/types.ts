@@ -1,6 +1,4 @@
-export type EventType = "DAY" | "NIGHT" | "OFF" | "LEISURE";
-
-export type LeisureVariant = "party" | "game";
+export type EventType = "DAY" | "NIGHT" | "OFF" | "CUSTOM";
 
 export interface ShiftEvent {
   id: string;
@@ -10,7 +8,8 @@ export interface ShiftEvent {
   /** ISO 8601 with offset, timed types */
   start?: string;
   end?: string;
-  leisureVariant?: LeisureVariant;
+  /** CUSTOM(일정) 제목 */
+  title?: string;
   createdAt: string;
   updatedAt: string;
 }

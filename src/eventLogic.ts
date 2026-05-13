@@ -1,5 +1,5 @@
 import { addDays, parseISO } from "date-fns";
-import type { EventType, ShiftEvent, LeisureVariant } from "./types";
+import type { EventType, ShiftEvent } from "./types";
 
 export function nowIso(): string {
   return new Date().toISOString();
@@ -20,7 +20,7 @@ export function seoulYmd(isoOrDate: string | Date): string {
   }).format(d);
 }
 
-function seoulInstant(ymd: string, h: number, m: number): string {
+export function seoulInstant(ymd: string, h: number, m: number): string {
   return `${ymd}T${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:00+09:00`;
 }
 
@@ -32,32 +32,46 @@ export function labelForType(t: EventType): string {
       return "야간";
     case "OFF":
       return "비번";
-    case "LEISURE":
-      return "노는 시간";
+    case "CUSTOM":
+      return "일정";
   }
 }
 
-export function createDayShift(dateYmd: string): ShiftEvent {
+/** 목록·편집기에 표시할 한 줄 제목 */
+export function eventDisplayTitle(ev: ShiftEvent): string {
+  if (ev.type === "CUSTOM") return ev.title?.trim() || "데이트";
+  return labelForType(ev.type);
+}
+
+export function createDayShift(
+  dateYmd: string,
+  startIso?: string,
+  endIso?: string
+): ShiftEvent {
   const t = nowIso();
   return {
     id: uuid(),
     type: "DAY",
-    start: seoulInstant(dateYmd, 8, 0),
-    end: seoulInstant(dateYmd, 19, 0),
+    start: startIso ?? seoulInstant(dateYmd, 8, 0),
+    end: endIso ?? seoulInstant(dateYmd, 19, 0),
     createdAt: t,
     updatedAt: t,
   };
 }
 
-export function createNightShift(dateYmd: string): ShiftEvent {
+export function createNightShift(
+  dateYmd: string,
+  startIso?: string,
+  endIso?: string
+): ShiftEvent {
   const next = addDays(parseISO(`${dateYmd}T12:00:00+09:00`), 1);
   const nextYmd = seoulYmd(next);
   const t = nowIso();
   return {
     id: uuid(),
     type: "NIGHT",
-    start: seoulInstant(dateYmd, 19, 0),
-    end: seoulInstant(nextYmd, 8, 0),
+    start: startIso ?? seoulInstant(dateYmd, 19, 0),
+    end: endIso ?? seoulInstant(nextYmd, 8, 0),
     createdAt: t,
     updatedAt: t,
   };
@@ -74,17 +88,19 @@ export function createOff(dateYmd: string): ShiftEvent {
   };
 }
 
-export function createLeisure(
+export function createCustom(
   dateYmd: string,
-  variant: LeisureVariant
+  title: string,
+  startIso?: string,
+  endIso?: string
 ): ShiftEvent {
   const t = nowIso();
   return {
     id: uuid(),
-    type: "LEISURE",
-    leisureVariant: variant,
-    start: seoulInstant(dateYmd, 19, 0),
-    end: seoulInstant(dateYmd, 22, 0),
+    type: "CUSTOM",
+    title: title.trim() || "데이트",
+    start: startIso ?? seoulInstant(dateYmd, 19, 0),
+    end: endIso ?? seoulInstant(dateYmd, 22, 0),
     createdAt: t,
     updatedAt: t,
   };
@@ -210,7 +226,7 @@ export function sortEventsForDay(a: ShiftEvent, b: ShiftEvent): number {
 
 export function updateEventTimes(
   ev: ShiftEvent,
-  patch: { start?: string; end?: string; date?: string }
+  patch: { start?: string; end?: string; date?: string; title?: string }
 ): ShiftEvent {
   const t = nowIso();
   if (ev.type === "OFF") {
@@ -224,6 +240,7 @@ export function updateEventTimes(
     ...ev,
     start: patch.start ?? ev.start,
     end: patch.end ?? ev.end,
+    title: patch.title !== undefined ? patch.title : ev.title,
     updatedAt: t,
   };
 }
@@ -240,4 +257,23 @@ export function formatTimeRange(ev: ShiftEvent): string {
     hour12: true,
   });
   return `${tf.format(s)} – ${tf.format(e)}`;
+}
+
+/** 구버전 LEISURE JSON 호환 */
+export function normalizeLoadedEvent(raw: unknown): ShiftEvent | null {
+  if (!raw || typeof raw !== "object") return null;
+  const o = raw as Record<string, unknown>;
+  if (o.type === "LEISURE") {
+    const v = o.leisureVariant;
+    const title =
+      v === "game" ? "게임" : v === "party" ? "파티" : "일정";
+    const rest = { ...o } as Record<string, unknown>;
+    delete rest.leisureVariant;
+    return {
+      ...(rest as unknown as ShiftEvent),
+      type: "CUSTOM",
+      title,
+    };
+  }
+  return raw as ShiftEvent;
 }

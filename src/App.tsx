@@ -4,19 +4,16 @@ import type { GitHubConfig, ShiftEvent } from "./types";
 import { fetchRepoFileJson, saveRepoFileJson } from "./github";
 import {
   buildCycleEvents,
-  createDayShift,
-  createLeisure,
-  createNightShift,
-  createOff,
   hasOverlapInRange,
+  normalizeLoadedEvent,
   seoulYmd,
 } from "./eventLogic";
 import CalendarMonth from "./components/CalendarMonth";
-import DaySheet from "./components/DaySheet";
+import DayBottomBar from "./components/DayBottomBar";
 import EventEditor from "./components/EventEditor";
 import SettingsPanel, { type StoredSettings } from "./components/SettingsPanel";
 import SettingsMenuSheet from "./components/SettingsMenuSheet";
-import PickDateModal from "./components/PickDateModal";
+import AddEventModal, { type AddEventKind } from "./components/AddEventModal";
 import CycleModal from "./components/CycleModal";
 
 const LS = {
@@ -70,25 +67,15 @@ function toCfg(s: StoredSettings): GitHubConfig | null {
   };
 }
 
-function isEventList(x: unknown): x is ShiftEvent[] {
+function isEventList(x: unknown): x is unknown[] {
   return Array.isArray(x);
 }
 
-type PickKind = "DAY" | "NIGHT" | "OFF" | "LEISURE_PARTY" | "LEISURE_GAME";
-
-function pickDateTitle(kind: PickKind): string {
-  switch (kind) {
-    case "DAY":
-      return "주간 넣을 날짜";
-    case "NIGHT":
-      return "야간 넣을 날짜";
-    case "OFF":
-      return "비번 넣을 날짜";
-    case "LEISURE_PARTY":
-      return "노는 시간(파티) 날짜";
-    case "LEISURE_GAME":
-      return "노는 시간(게임) 날짜";
-  }
+function normalizeEventsPayload(raw: unknown): ShiftEvent[] {
+  if (!isEventList(raw)) return [];
+  return raw
+    .map((row) => normalizeLoadedEvent(row))
+    .filter((e): e is ShiftEvent => e !== null);
 }
 
 export default function App() {
@@ -113,7 +100,7 @@ export default function App() {
   const [settingsMenuOpen, setSettingsMenuOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [cycleOpen, setCycleOpen] = useState(false);
-  const [pickKind, setPickKind] = useState<PickKind | null>(null);
+  const [addKind, setAddKind] = useState<AddEventKind | null>(null);
 
   const cfg = useMemo(() => toCfg(settings), [settings]);
 
@@ -133,7 +120,8 @@ export default function App() {
       if (!isEventList(data)) {
         throw new Error("events.json 형식이 배열이 아닙니다.");
       }
-      setEvents(data);
+      const list = normalizeEventsPayload(data);
+      setEvents(list);
       setSha(s);
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
@@ -167,7 +155,7 @@ export default function App() {
           try {
             const { data, sha: freshSha } = await fetchRepoFileJson<unknown>(c);
             if (isEventList(data)) {
-              setEvents(data);
+              setEvents(normalizeEventsPayload(data));
               setSha(freshSha);
             }
           } catch {
@@ -203,6 +191,14 @@ export default function App() {
     } else setMonth((m) => m + 1);
   };
 
+  const jumpToday = () => {
+    const t = seoulYmd(new Date());
+    const [y, m] = t.split("-").map(Number);
+    setYear(y);
+    setMonth(m);
+    setSelected(t);
+  };
+
   const handleAdd = async (ev: ShiftEvent) => {
     const next = [...events, ev];
     await persist(next, "일정 추가");
@@ -234,32 +230,10 @@ export default function App() {
     if (ok) setCycleOpen(false);
   };
 
-  const confirmPickDate = async (ymd: string) => {
-    if (!pickKind) return;
-    let ev: ShiftEvent | null = null;
-    switch (pickKind) {
-      case "DAY":
-        ev = createDayShift(ymd);
-        break;
-      case "NIGHT":
-        ev = createNightShift(ymd);
-        break;
-      case "OFF":
-        ev = createOff(ymd);
-        break;
-      case "LEISURE_PARTY":
-        ev = createLeisure(ymd, "party");
-        break;
-      case "LEISURE_GAME":
-        ev = createLeisure(ymd, "game");
-        break;
-    }
-    setPickKind(null);
-    if (ev) await handleAdd(ev);
-  };
-
   return (
-    <div className="app-shell">
+    <div
+      className={`app-shell${selected ? " has-day-panel" : ""}`}
+    >
       <header className="app-header">
         <div className="month-title" style={{ fontSize: "1.1rem" }}>
           일정
@@ -285,20 +259,25 @@ export default function App() {
           바로 저장됩니다.
         </p>
       )}
-      <CalendarMonth
-        year={year}
-        month={month}
-        events={events}
-        selected={selected}
-        onSelect={(ymd) => setSelected(ymd)}
-        onPrevMonth={onPrevMonth}
-        onNextMonth={onNextMonth}
-      />
+      <div className="app-main">
+        <CalendarMonth
+          year={year}
+          month={month}
+          events={events}
+          selected={selected}
+          onSelect={(ymd) => setSelected(ymd)}
+          onPrevMonth={onPrevMonth}
+          onNextMonth={onNextMonth}
+          onYearChange={(y) => setYear(y)}
+          onMonthChange={(m) => setMonth(m)}
+          onJumpToday={jumpToday}
+        />
+      </div>
       {selected && (
-        <DaySheet
+        <DayBottomBar
           ymd={selected}
           events={events}
-          onClose={() => setSelected(null)}
+          onClear={() => setSelected(null)}
           onOpenEvent={(ev) => setEditing(ev)}
         />
       )}
@@ -315,39 +294,35 @@ export default function App() {
         onClose={() => setSettingsMenuOpen(false)}
         onDay={() => {
           setSettingsMenuOpen(false);
-          setPickKind("DAY");
+          setAddKind("DAY");
         }}
         onNight={() => {
           setSettingsMenuOpen(false);
-          setPickKind("NIGHT");
+          setAddKind("NIGHT");
         }}
         onOff={() => {
           setSettingsMenuOpen(false);
-          setPickKind("OFF");
+          setAddKind("OFF");
+        }}
+        onCustom={() => {
+          setSettingsMenuOpen(false);
+          setAddKind("CUSTOM");
         }}
         onCycle={() => {
           setSettingsMenuOpen(false);
           setCycleOpen(true);
-        }}
-        onLeisureParty={() => {
-          setSettingsMenuOpen(false);
-          setPickKind("LEISURE_PARTY");
-        }}
-        onLeisureGame={() => {
-          setSettingsMenuOpen(false);
-          setPickKind("LEISURE_GAME");
         }}
         onGithub={() => {
           setSettingsMenuOpen(false);
           setSettingsOpen(true);
         }}
       />
-      <PickDateModal
-        open={pickKind !== null}
-        title={pickKind ? pickDateTitle(pickKind) : ""}
+      <AddEventModal
+        open={addKind !== null}
+        kind={addKind}
         initialYmd={defaultPickYmd}
-        onClose={() => setPickKind(null)}
-        onConfirm={(ymd) => void confirmPickDate(ymd)}
+        onClose={() => setAddKind(null)}
+        onConfirm={(ev) => void handleAdd(ev)}
       />
       <SettingsPanel
         open={settingsOpen}

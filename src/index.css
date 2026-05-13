@@ -9,7 +9,7 @@
   --day-dot: #3c6ff8;
   --night-dot: #6b4cff;
   --off-dot: #9aa0a6;
-  --leisure-dot: #ff9f0a;
+  --custom-dot: #ff9f0a;
   font-family:
     "Pretendard",
     -apple-system,
@@ -55,6 +55,29 @@ button {
   padding: 12px 14px calc(16px + env(safe-area-inset-bottom));
 }
 
+.app-shell.has-day-panel {
+  padding-bottom: calc(228px + env(safe-area-inset-bottom));
+}
+
+.app-main {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .app-header {
   display: flex;
   align-items: center;
@@ -89,6 +112,62 @@ button {
   border-radius: 16px;
   padding: 10px 8px 12px;
   box-shadow: 0 2px 12px rgb(0 0 0 / 5%);
+}
+
+.cal-nav-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.cal-title-block {
+  flex: 1;
+  text-align: center;
+  min-width: 0;
+}
+
+.cal-title-block .month-title {
+  font-size: 1.1rem;
+  margin-bottom: 6px;
+}
+
+.cal-ym-pickers {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.cal-select {
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--text);
+  max-width: 46%;
+}
+
+.cal-today-row {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.today-btn {
+  padding: 8px 20px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  font-weight: 600;
+  font-size: 0.88rem;
+}
+
+.today-btn:active {
+  background: var(--bg);
 }
 
 .week-row {
@@ -178,8 +257,8 @@ button {
 .dot-off {
   background: var(--off-dot);
 }
-.dot-leisure {
-  background: var(--leisure-dot);
+.dot-custom {
+  background: var(--custom-dot);
 }
 
 .sheet-backdrop {
@@ -241,11 +320,20 @@ button {
   filter: brightness(0.97);
 }
 
-.settings-menu-leisure {
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-  margin-bottom: 14px;
+.settings-menu-custom {
+  width: 100%;
+  margin-bottom: 12px;
+  padding: 14px;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #fff6e8, #ffe2c2);
+  border: 1px solid #ffd49a;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #a65a00;
+}
+
+.settings-menu-custom:active {
+  filter: brightness(0.97);
 }
 
 .settings-menu-token {
@@ -470,4 +558,80 @@ button {
   100% {
     opacity: 0.35;
   }
+}
+
+.title-chips {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.chip-btn {
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.chip-btn:active {
+  background: #e8e8e8;
+}
+
+.day-bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 30;
+  max-width: 480px;
+  margin: 0 auto;
+  width: 100%;
+  background: var(--surface);
+  border-top: 1px solid var(--line);
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 -4px 24px rgb(0 0 0 / 8%);
+  padding: 10px 14px calc(12px + env(safe-area-inset-bottom));
+  max-height: min(38vh, 280px);
+  display: flex;
+  flex-direction: column;
+}
+
+.day-bottom-bar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  flex-shrink: 0;
+}
+
+.day-bottom-bar-date {
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.day-bottom-bar-close {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  background: var(--bg);
+}
+
+.day-bottom-bar-close:active {
+  filter: brightness(0.96);
+}
+
+.day-bottom-bar-body {
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  -webkit-overflow-scrolling: touch;
+}
+
+.day-bottom-bar-body .event-row:last-child {
+  margin-bottom: 0;
 }

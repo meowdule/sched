@@ -1,35 +1,30 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import type { ShiftEvent } from "../types";
+import type { EventType, ShiftEvent } from "../types";
 import {
   calendarGridCells,
-  datesWithEvents,
-  eventsForDate,
+  markerTypesForDay,
   seoulYmd,
 } from "../eventLogic";
 
 const WEEK = ["일", "월", "화", "수", "목", "금", "토"];
 
-function dotClass(t: string): string {
-  if (t === "DAY") return "dot dot-day";
-  if (t === "NIGHT") return "dot dot-night";
-  if (t === "OFF") return "dot dot-off";
-  return "dot dot-custom";
-}
-
-function typesForDay(events: ShiftEvent[], ymd: string): string[] {
-  const list = eventsForDate(events, ymd);
-  const order: string[] = [];
-  for (const e of list) {
-    if (!order.includes(e.type)) order.push(e.type);
-    if (order.length >= 4) break;
+function markerClass(t: EventType): string {
+  switch (t) {
+    case "DAY":
+      return "cal-m cal-m--day";
+    case "NIGHT":
+      return "cal-m cal-m--night";
+    case "OFF":
+      return "cal-m cal-m--off";
+    case "CUSTOM":
+      return "cal-m cal-m--custom";
   }
-  return order;
 }
 
 const YEAR_OPTS = (() => {
-  const y = new Date().getFullYear();
+  const y0 = Number(seoulYmd(new Date()).split("-")[0]);
   const arr: number[] = [];
-  for (let i = y - 3; i <= y + 5; i++) arr.push(i);
+  for (let i = y0 - 6; i <= y0 + 7; i++) arr.push(i);
   return arr;
 })();
 
@@ -60,25 +55,18 @@ export default function CalendarMonth({
 }: Props) {
   const cells = calendarGridCells(year, month);
   const today = seoulYmd(new Date());
-  const withEv = datesWithEvents(events, year, month);
 
   return (
     <div className="cal-card">
-      <div className="cal-nav-row">
-        <button type="button" className="icon-btn" onClick={onPrevMonth}>
-          <ChevronLeft size={22} />
-        </button>
-        <div className="cal-title-block">
-          <div className="month-title">
-            {year}년 {month}월
-          </div>
-          <div className="cal-ym-pickers">
+      <div className="cal-card-top">
+        <div className="cal-fancy-selects">
+          <div className="fancy-select-wrap">
             <label className="sr-only" htmlFor="cal-year">
               연도
             </label>
             <select
               id="cal-year"
-              className="cal-select"
+              className="fancy-select"
               value={year}
               onChange={(e) => onYearChange(Number(e.target.value))}
             >
@@ -88,12 +76,14 @@ export default function CalendarMonth({
                 </option>
               ))}
             </select>
+          </div>
+          <div className="fancy-select-wrap">
             <label className="sr-only" htmlFor="cal-month">
               월
             </label>
             <select
               id="cal-month"
-              className="cal-select"
+              className="fancy-select fancy-select--month"
               value={month}
               onChange={(e) => onMonthChange(Number(e.target.value))}
             >
@@ -105,15 +95,33 @@ export default function CalendarMonth({
             </select>
           </div>
         </div>
-        <button type="button" className="icon-btn" onClick={onNextMonth}>
-          <ChevronRight size={22} />
-        </button>
-      </div>
-      <div className="cal-today-row">
-        <button type="button" className="today-btn" onClick={onJumpToday}>
+        <button type="button" className="cal-today-pill" onClick={onJumpToday}>
           오늘
         </button>
       </div>
+
+      <div className="cal-month-toolbar">
+        <button
+          type="button"
+          className="icon-btn icon-btn--ghost"
+          aria-label="이전 달"
+          onClick={onPrevMonth}
+        >
+          <ChevronLeft size={22} />
+        </button>
+        <div className="cal-month-label">
+          {year}년 {month}월
+        </div>
+        <button
+          type="button"
+          className="icon-btn icon-btn--ghost"
+          aria-label="다음 달"
+          onClick={onNextMonth}
+        >
+          <ChevronRight size={22} />
+        </button>
+      </div>
+
       <div className="week-row">
         {WEEK.map((w) => (
           <span key={w}>{w}</span>
@@ -121,7 +129,7 @@ export default function CalendarMonth({
       </div>
       <div className="grid-row" style={{ flexWrap: "wrap" }}>
         {cells.map(({ ymd, inMonth }) => {
-          const types = typesForDay(events, ymd);
+          const markers = markerTypesForDay(events, ymd);
           const sel = selected === ymd;
           const isToday = ymd === today;
           return (
@@ -132,11 +140,10 @@ export default function CalendarMonth({
               onClick={() => onSelect(ymd)}
             >
               <span className="day-num">{Number(ymd.split("-")[2])}</span>
-              <div className="dots">
-                {withEv.has(ymd) &&
-                  types.map((t) => (
-                    <span key={t} className={dotClass(t)} aria-hidden />
-                  ))}
+              <div className="cal-markers" aria-hidden>
+                {markers.map((t) => (
+                  <span key={t} className={markerClass(t)} />
+                ))}
               </div>
             </button>
           );

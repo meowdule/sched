@@ -1,6 +1,9 @@
 import { addDays, parseISO } from "date-fns";
 import type { EventType, ShiftEvent } from "./types";
 
+/** 달력 셀에 표시할 유형 순서 */
+const MARKER_ORDER: EventType[] = ["DAY", "NIGHT", "OFF", "CUSTOM"];
+
 export function nowIso(): string {
   return new Date().toISOString();
 }
@@ -185,6 +188,26 @@ export function datesWithEvents(
     if (events.some((e) => eventTouchesDate(e, ymd))) set.add(ymd);
   }
   return set;
+}
+
+/**
+ * 달력 격자에 마커를 찍을지 (야간은 **시작일**에만 표시해 이틀 연속 점이 겹쳐 보이지 않게 함)
+ */
+export function showsCalendarMarker(ev: ShiftEvent, ymd: string): boolean {
+  if (ev.type === "OFF") return ev.date === ymd;
+  if (!ev.start) return false;
+  return seoulYmd(parseISO(ev.start)) === ymd;
+}
+
+export function markerTypesForDay(
+  events: ShiftEvent[],
+  ymd: string
+): EventType[] {
+  const found = new Set<EventType>();
+  for (const e of events) {
+    if (showsCalendarMarker(e, ymd)) found.add(e.type);
+  }
+  return MARKER_ORDER.filter((t) => found.has(t));
 }
 
 export function hasOverlapInRange(

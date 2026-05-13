@@ -6,10 +6,6 @@
   --line: #e1e1e1;
   --accent: #3c6ff8;
   --danger: #e54d4d;
-  --day-dot: #3c6ff8;
-  --night-dot: #6b4cff;
-  --off-dot: #9aa0a6;
-  --custom-dot: #ff9f0a;
   font-family:
     "Pretendard",
     -apple-system,
@@ -107,67 +103,122 @@ button {
   transform: scale(0.97);
 }
 
+.icon-btn--ghost {
+  background: transparent;
+  box-shadow: none;
+  border: 1px solid transparent;
+}
+
+.icon-btn--ghost:active {
+  background: rgb(0 0 0 / 5%);
+}
+
 .cal-card {
   background: var(--surface);
   border-radius: 16px;
-  padding: 10px 8px 12px;
+  padding: 12px 10px 12px;
   box-shadow: 0 2px 12px rgb(0 0 0 / 5%);
 }
 
-.cal-nav-row {
+.cal-card-top {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: 6px;
-  margin-bottom: 6px;
+  gap: 10px;
+  margin-bottom: 10px;
 }
 
-.cal-title-block {
-  flex: 1;
-  text-align: center;
+.cal-fancy-selects {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
   min-width: 0;
 }
 
-.cal-title-block .month-title {
-  font-size: 1.1rem;
-  margin-bottom: 6px;
+.fancy-select-wrap {
+  position: relative;
 }
 
-.cal-ym-pickers {
-  display: flex;
-  gap: 8px;
-  justify-content: center;
-  flex-wrap: wrap;
+.fancy-select-wrap::after {
+  content: "";
+  position: absolute;
+  right: 11px;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  margin-top: -4px;
+  border-right: 2px solid #8e8e93;
+  border-bottom: 2px solid #8e8e93;
+  transform: rotate(45deg);
+  pointer-events: none;
+  opacity: 0.75;
 }
 
-.cal-select {
+.fancy-select {
+  appearance: none;
+  -webkit-appearance: none;
   font: inherit;
-  font-size: 0.85rem;
-  padding: 6px 10px;
-  border-radius: 10px;
-  border: 1px solid var(--line);
-  background: var(--bg);
-  color: var(--text);
-  max-width: 46%;
-}
-
-.cal-today-row {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 8px;
-}
-
-.today-btn {
-  padding: 8px 20px;
-  border-radius: 12px;
-  background: var(--surface);
-  border: 1px solid var(--line);
+  font-size: 0.86rem;
   font-weight: 600;
-  font-size: 0.88rem;
+  color: var(--text);
+  padding: 9px 34px 9px 12px;
+  min-width: 5.6rem;
+  border-radius: 12px;
+  border: 1px solid rgb(0 0 0 / 8%);
+  background: linear-gradient(180deg, #ffffff 0%, #f4f5f7 100%);
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 5%),
+    inset 0 1px 0 rgb(255 255 255 / 80%);
+  cursor: pointer;
 }
 
-.today-btn:active {
-  background: var(--bg);
+.fancy-select--month {
+  min-width: 4.6rem;
+}
+
+.fancy-select:focus {
+  outline: none;
+  border-color: rgb(60 111 248 / 45%);
+  box-shadow:
+    0 0 0 3px rgb(60 111 248 / 18%),
+    0 1px 2px rgb(0 0 0 / 5%);
+}
+
+.cal-today-pill {
+  flex-shrink: 0;
+  padding: 9px 18px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #fff;
+  border: none;
+  background: linear-gradient(135deg, #3c6ff8 0%, #6b4cff 55%, #8b5cf6 100%);
+  box-shadow:
+    0 2px 10px rgb(91 76 255 / 35%),
+    inset 0 1px 0 rgb(255 255 255 / 22%);
+}
+
+.cal-today-pill:active {
+  transform: scale(0.97);
+  opacity: 0.95;
+}
+
+.cal-month-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.cal-month-label {
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  min-width: 7.5rem;
+  text-align: center;
 }
 
 .week-row {
@@ -232,33 +283,56 @@ button {
   font-weight: 600;
 }
 
-.dots {
+.cal-markers {
   display: flex;
-  gap: 3px;
-  margin-top: 4px;
+  gap: 4px;
+  margin-top: 3px;
   flex-wrap: wrap;
   justify-content: center;
+  align-items: center;
+  min-height: 9px;
   max-width: 100%;
-  padding: 0 2px;
+  padding: 0 1px;
 }
 
-.dot {
-  width: 5px;
-  height: 5px;
+.cal-m {
+  flex-shrink: 0;
+}
+
+/* 주간: 둥근 사각형 · 청록 */
+.cal-m--day {
+  width: 6px;
+  height: 6px;
+  border-radius: 2px;
+  background: linear-gradient(145deg, #14b8a6, #0d9488);
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 35%) inset;
+}
+
+/* 야간: 다이아몬드 · 진보라 */
+.cal-m--night {
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  background: linear-gradient(145deg, #7c3aed, #4c1d95);
+  transform: rotate(45deg) scale(0.82);
+  box-shadow: 0 1px 3px rgb(76 29 149 / 45%);
+}
+
+/* 비번: 가로 막대 · 슬레이트 */
+.cal-m--off {
+  width: 11px;
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #94a3b8, #64748b);
+}
+
+/* 일정: 원 · 로즈 */
+.cal-m--custom {
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-}
-
-.dot-day {
-  background: var(--day-dot);
-}
-.dot-night {
-  background: var(--night-dot);
-}
-.dot-off {
-  background: var(--off-dot);
-}
-.dot-custom {
-  background: var(--custom-dot);
+  background: linear-gradient(145deg, #fb7185, #db2777);
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 35%) inset;
 }
 
 .sheet-backdrop {

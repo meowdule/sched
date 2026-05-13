@@ -128,7 +128,7 @@ button {
   margin-bottom: 10px;
 }
 
-.cal-fancy-selects {
+.cal-ym-selects {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -136,53 +136,15 @@ button {
   min-width: 0;
 }
 
-.fancy-select-wrap {
-  position: relative;
-}
-
-.fancy-select-wrap::after {
-  content: "";
-  position: absolute;
-  right: 11px;
-  top: 50%;
-  width: 6px;
-  height: 6px;
-  margin-top: -4px;
-  border-right: 2px solid #8e8e93;
-  border-bottom: 2px solid #8e8e93;
-  transform: rotate(45deg);
-  pointer-events: none;
-  opacity: 0.75;
-}
-
-.fancy-select {
-  appearance: none;
-  -webkit-appearance: none;
-  font: inherit;
-  font-size: 0.86rem;
-  font-weight: 600;
-  color: var(--text);
-  padding: 9px 34px 9px 12px;
-  min-width: 5.6rem;
-  border-radius: 12px;
-  border: 1px solid rgb(0 0 0 / 8%);
-  background: linear-gradient(180deg, #ffffff 0%, #f4f5f7 100%);
-  box-shadow:
-    0 1px 2px rgb(0 0 0 / 5%),
-    inset 0 1px 0 rgb(255 255 255 / 80%);
+.cal-ym-select {
   cursor: pointer;
+  font-weight: 500;
+  font-size: 0.9rem;
+  min-width: 5.75rem;
 }
 
-.fancy-select--month {
-  min-width: 4.6rem;
-}
-
-.fancy-select:focus {
-  outline: none;
-  border-color: rgb(60 111 248 / 45%);
-  box-shadow:
-    0 0 0 3px rgb(60 111 248 / 18%),
-    0 1px 2px rgb(0 0 0 / 5%);
+.cal-ym-select--month {
+  min-width: 4.35rem;
 }
 
 .cal-today-pill {
@@ -545,12 +507,21 @@ button {
   color: var(--muted);
 }
 
-.field input {
+.field input,
+.cal-ym-select {
   font: inherit;
   padding: 10px 12px;
   border-radius: 12px;
   border: 1px solid var(--line);
   background: #fafafa;
+  color: var(--text);
+}
+
+.field input:focus,
+.cal-ym-select:focus {
+  outline: none;
+  border-color: rgb(60 111 248 / 45%);
+  box-shadow: 0 0 0 3px rgb(60 111 248 / 18%);
 }
 
 .row-btns {

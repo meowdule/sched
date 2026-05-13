@@ -59,41 +59,37 @@ export default function CalendarMonth({
   return (
     <div className="cal-card">
       <div className="cal-card-top">
-        <div className="cal-fancy-selects">
-          <div className="fancy-select-wrap">
-            <label className="sr-only" htmlFor="cal-year">
-              연도
-            </label>
-            <select
-              id="cal-year"
-              className="fancy-select"
-              value={year}
-              onChange={(e) => onYearChange(Number(e.target.value))}
-            >
-              {YEAR_OPTS.map((y) => (
-                <option key={y} value={y}>
-                  {y}년
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="fancy-select-wrap">
-            <label className="sr-only" htmlFor="cal-month">
-              월
-            </label>
-            <select
-              id="cal-month"
-              className="fancy-select fancy-select--month"
-              value={month}
-              onChange={(e) => onMonthChange(Number(e.target.value))}
-            >
-              {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-                <option key={m} value={m}>
-                  {m}월
-                </option>
-              ))}
-            </select>
-          </div>
+        <div className="cal-ym-selects">
+          <label className="sr-only" htmlFor="cal-year">
+            연도
+          </label>
+          <select
+            id="cal-year"
+            className="cal-ym-select"
+            value={year}
+            onChange={(e) => onYearChange(Number(e.target.value))}
+          >
+            {YEAR_OPTS.map((y) => (
+              <option key={y} value={y}>
+                {y}년
+              </option>
+            ))}
+          </select>
+          <label className="sr-only" htmlFor="cal-month">
+            월
+          </label>
+          <select
+            id="cal-month"
+            className="cal-ym-select cal-ym-select--month"
+            value={month}
+            onChange={(e) => onMonthChange(Number(e.target.value))}
+          >
+            {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+              <option key={m} value={m}>
+                {m}월
+              </option>
+            ))}
+          </select>
         </div>
         <button type="button" className="cal-today-pill" onClick={onJumpToday}>
           오늘

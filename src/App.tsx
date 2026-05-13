@@ -81,6 +81,8 @@ function normalizeEventsPayload(raw: unknown): ShiftEvent[] {
     .filter((e): e is ShiftEvent => e !== null);
 }
 
+type EventsUpdater = (draft: ShiftEvent[]) => ShiftEvent[];
+
 export default function App() {
   const defaults = useMemo(() => envDefaults(), []);
   const [settings, setSettings] = useState<StoredSettings>(() =>
@@ -95,7 +97,7 @@ export default function App() {
     return Number(t.split("-")[1]);
   });
   const [events, setEvents] = useState<ShiftEvent[]>([]);
-  const [sha, setSha] = useState<string | null>(null);
+  const [, setSha] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
@@ -140,7 +142,7 @@ export default function App() {
   }, [refresh]);
 
   const persist = useCallback(
-    async (next: ShiftEvent[], message: string) => {
+    async (update: EventsUpdater, message: string): Promise<boolean> => {
       const c = toCfg(settings);
       if (!c) {
         alert("설정(토큰 · 저장소)에서 GitHub 정보를 입력해 주세요.");
@@ -148,27 +150,45 @@ export default function App() {
       }
       setLoading(true);
       setErr(null);
+      const maxAttempts = 6;
       try {
-        const nextSha = await saveRepoFileJson(c, next, sha, message);
-        setEvents(next);
-        setSha(nextSha);
-        return true;
-      } catch (e) {
-        if (e instanceof Error && e.message === "CONFLICT") {
-          try {
-            const { data, sha: freshSha } = await fetchRepoFileJson<unknown>(c);
-            if (isEventList(data)) {
-              setEvents(normalizeEventsPayload(data));
-              setSha(freshSha);
-            }
-          } catch {
-            /* ignore */
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+          const { data, sha: blobSha } = await fetchRepoFileJson<unknown>(c);
+          if (!isEventList(data)) {
+            throw new Error("events.json 형식이 배열이 아닙니다.");
           }
-          alert(
-            "다른 쪽에서 먼저 저장했습니다. 최신 데이터로 맞췄으니 다시 시도해 주세요."
-          );
-          return false;
+          const draft = normalizeEventsPayload(data);
+          let next: ShiftEvent[];
+          try {
+            next = update(draft);
+          } catch (err) {
+            if (err instanceof Error && err.message === "PERSIST_ABORT") {
+              return false;
+            }
+            throw err;
+          }
+          try {
+            const newSha = await saveRepoFileJson(c, next, blobSha, message);
+            setEvents(next);
+            setSha(newSha);
+            return true;
+          } catch (e) {
+            if (e instanceof Error && e.message === "CONFLICT") {
+              continue;
+            }
+            throw e;
+          }
         }
+        const { data, sha: freshSha } = await fetchRepoFileJson<unknown>(c);
+        if (isEventList(data)) {
+          setEvents(normalizeEventsPayload(data));
+          setSha(freshSha);
+        }
+        alert(
+          "저장이 계속 겹쳤습니다. 화면은 최신으로 맞춰 두었으니 잠시 후 다시 눌러 주세요."
+        );
+        return false;
+      } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
         setErr(msg);
         alert(msg);
@@ -177,7 +197,7 @@ export default function App() {
         setLoading(false);
       }
     },
-    [settings, sha]
+    [settings]
   );
 
   const onPrevMonth = () => {
@@ -203,33 +223,30 @@ export default function App() {
   };
 
   const handleAdd = async (ev: ShiftEvent) => {
-    const next = [...events, ev];
-    await persist(next, "일정 추가");
+    await persist((d) => [...d, ev], "일정 추가");
   };
 
   const handleSaveEdit = async (ev: ShiftEvent) => {
-    const next = events.map((x) => (x.id === ev.id ? ev : x));
-    await persist(next, "일정 수정");
+    await persist((d) => d.map((x) => (x.id === ev.id ? ev : x)), "일정 수정");
   };
 
   const handleDelete = async (id: string) => {
-    const next = events.filter((x) => x.id !== id);
-    await persist(next, "일정 삭제");
+    await persist((d) => d.filter((x) => x.id !== id), "일정 삭제");
   };
 
   const handleCycle = async (startYmd: string) => {
-    const conflicts = hasOverlapInRange(events, startYmd, 6);
-    if (conflicts.length > 0) {
-      alert(
-        `다음 날짜에 기존 일정이 있어 주기를 적용할 수 없습니다.\n${conflicts.join(
-          ", "
-        )}\n해당 날짜의 일정을 삭제한 뒤 다시 주기를 눌러 주세요.`
-      );
-      return;
-    }
-    const extra = buildCycleEvents(startYmd);
-    const next = [...events, ...extra];
-    const ok = await persist(next, "주기 6일 등록");
+    const ok = await persist((draft) => {
+      const conflicts = hasOverlapInRange(draft, startYmd, 6);
+      if (conflicts.length > 0) {
+        alert(
+          `다음 날짜에 기존 일정이 있어 주기를 적용할 수 없습니다.\n${conflicts.join(
+            ", "
+          )}\n해당 날짜의 일정을 삭제한 뒤 다시 주기를 눌러 주세요.`
+        );
+        throw new Error("PERSIST_ABORT");
+      }
+      return [...draft, ...buildCycleEvents(startYmd)];
+    }, "주기 6일 등록");
     if (ok) setCycleOpen(false);
   };
 

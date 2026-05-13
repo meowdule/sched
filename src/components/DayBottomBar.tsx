@@ -1,4 +1,4 @@
-import { X } from "lucide-react";
+import { Sun, Moon, Armchair, X } from "lucide-react";
 import type { ShiftEvent } from "../types";
 import {
   eventDisplayTitle,
@@ -12,6 +12,9 @@ type Props = {
   events: ShiftEvent[];
   onClear: () => void;
   onOpenEvent: (ev: ShiftEvent) => void;
+  onQuickDay: () => void;
+  onQuickNight: () => void;
+  onQuickOff: () => void;
 };
 
 export default function DayBottomBar({
@@ -19,6 +22,9 @@ export default function DayBottomBar({
   events,
   onClear,
   onOpenEvent,
+  onQuickDay,
+  onQuickNight,
+  onQuickOff,
 }: Props) {
   const dayEvents = [...eventsForDate(events, ymd)].sort(sortEventsForDay);
 
@@ -26,14 +32,43 @@ export default function DayBottomBar({
     <aside className="day-bottom-bar" aria-label={`${ymd} 일정`}>
       <div className="day-bottom-bar-head">
         <span className="day-bottom-bar-date">{ymd}</span>
-        <button
-          type="button"
-          className="day-bottom-bar-close"
-          aria-label="날짜 선택 해제"
-          onClick={onClear}
-        >
-          <X size={20} />
-        </button>
+        <div className="day-bottom-bar-actions">
+          <button
+            type="button"
+            className="day-quick-btn day-quick-btn--sun"
+            title="해 · 주간"
+            aria-label="해, 이 날짜에 주간 추가"
+            onClick={onQuickDay}
+          >
+            <Sun size={20} strokeWidth={2.1} />
+          </button>
+          <button
+            type="button"
+            className="day-quick-btn day-quick-btn--moon"
+            title="달 · 야간"
+            aria-label="달, 이 날짜에 야간 추가"
+            onClick={onQuickNight}
+          >
+            <Moon size={20} strokeWidth={2.1} />
+          </button>
+          <button
+            type="button"
+            className="day-quick-btn day-quick-btn--rest"
+            title="쉼 · 비번"
+            aria-label="쉼, 이 날짜에 비번 추가"
+            onClick={onQuickOff}
+          >
+            <Armchair size={20} strokeWidth={2.1} />
+          </button>
+          <button
+            type="button"
+            className="day-bottom-bar-close"
+            aria-label="날짜 선택 해제"
+            onClick={onClear}
+          >
+            <X size={20} />
+          </button>
+        </div>
       </div>
       <div className="day-bottom-bar-body">
         {dayEvents.length === 0 ? (

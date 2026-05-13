@@ -4,6 +4,9 @@ import type { GitHubConfig, ShiftEvent } from "./types";
 import { fetchRepoFileJson, saveRepoFileJson } from "./github";
 import {
   buildCycleEvents,
+  createDayShift,
+  createNightShift,
+  createOff,
   hasOverlapInRange,
   normalizeLoadedEvent,
   seoulYmd,
@@ -279,6 +282,9 @@ export default function App() {
           events={events}
           onClear={() => setSelected(null)}
           onOpenEvent={(ev) => setEditing(ev)}
+          onQuickDay={() => void handleAdd(createDayShift(selected))}
+          onQuickNight={() => void handleAdd(createNightShift(selected))}
+          onQuickOff={() => void handleAdd(createOff(selected))}
         />
       )}
       {editing && (

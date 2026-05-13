@@ -1,4 +1,4 @@
-import { Sun, Moon, Armchair, X } from "lucide-react";
+import { Sun, Moon, Armchair, Repeat, Sparkles, X } from "lucide-react";
 import type { ShiftEvent } from "../types";
 import {
   eventDisplayTitle,
@@ -15,6 +15,8 @@ type Props = {
   onQuickDay: () => void;
   onQuickNight: () => void;
   onQuickOff: () => void;
+  onQuickCycle: () => void;
+  onQuickCustom: () => void;
 };
 
 export default function DayBottomBar({
@@ -25,6 +27,8 @@ export default function DayBottomBar({
   onQuickDay,
   onQuickNight,
   onQuickOff,
+  onQuickCycle,
+  onQuickCustom,
 }: Props) {
   const dayEvents = [...eventsForDate(events, ymd)].sort(sortEventsForDay);
 
@@ -59,6 +63,24 @@ export default function DayBottomBar({
             onClick={onQuickOff}
           >
             <Armchair size={20} strokeWidth={2.1} />
+          </button>
+          <button
+            type="button"
+            className="day-quick-btn day-quick-btn--cycle"
+            title="주기"
+            aria-label="주기 적용 (시작일은 선택한 날짜)"
+            onClick={onQuickCycle}
+          >
+            <Repeat size={20} strokeWidth={2.1} />
+          </button>
+          <button
+            type="button"
+            className="day-quick-btn day-quick-btn--custom"
+            title="일정"
+            aria-label="일정 추가, 이 날짜"
+            onClick={onQuickCustom}
+          >
+            <Sparkles size={20} strokeWidth={2.1} />
           </button>
           <button
             type="button"

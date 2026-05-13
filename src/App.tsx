@@ -302,6 +302,8 @@ export default function App() {
           onQuickDay={() => void handleAdd(createDayShift(selected))}
           onQuickNight={() => void handleAdd(createNightShift(selected))}
           onQuickOff={() => void handleAdd(createOff(selected))}
+          onQuickCycle={() => setCycleOpen(true)}
+          onQuickCustom={() => setAddKind("CUSTOM")}
         />
       )}
       {editing && (

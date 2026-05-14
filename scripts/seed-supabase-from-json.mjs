@@ -1,7 +1,9 @@
 /**
- * GitHub용 data/events.json 내용을 Supabase shift_calendar_state 한 행으로 넣습니다.
- * 실행 전: supabase/schema.sql 적용, .env에 VITE_SUPABASE_URL·VITE_SUPABASE_ANON_KEY 설정.
- * 이후 레포의 events.json은 빈 배열로 두고(Supabase만 진실), GitHub 모드는 빈 달력이 됩니다.
+ * data/events.json 배열을 Supabase 정규화 테이블에 반영합니다.
+ * shift_replace_events RPC로 전체 교체합니다(schema.sql 적용 필요).
+ *
+ * .env: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY
+ * 선택 인자: JSON 파일 경로 (기본 data/events.json)
  */
 import { createClient } from "@supabase/supabase-js";
 import { readFileSync } from "node:fs";
@@ -28,19 +30,41 @@ const jsonPath =
 const raw = readFileSync(jsonPath, "utf8");
 const events = JSON.parse(raw);
 if (!Array.isArray(events)) {
-  console.error("data/events.json은 JSON 배열이어야 합니다.");
+  console.error("JSON 파일은 배열이어야 합니다.");
   process.exit(1);
 }
 
 const sb = createClient(url, key);
-const { error } = await sb.from("shift_calendar_state").upsert(
-  { id: "shared", events, rev: 0 },
-  { onConflict: "id" }
-);
 
-if (error) {
-  console.error("Supabase upsert 실패:", error.message);
-  process.exit(1);
+for (let i = 0; i < 8; i++) {
+  const { data: meta, error: mErr } = await sb
+    .from("shift_calendar_meta")
+    .select("rev")
+    .eq("id", "singleton")
+    .maybeSingle();
+  if (mErr) {
+    console.error("메타 읽기 실패:", mErr.message);
+    process.exit(1);
+  }
+  const expectedRev = Number(meta?.rev) || 0;
+
+  const { data, error } = await sb.rpc("shift_replace_events", {
+    p_expected_rev: expectedRev,
+    p_events: events,
+  });
+  if (error) {
+    console.error("RPC 실패:", error.message);
+    process.exit(1);
+  }
+  const n = Number(data);
+  if (Number.isFinite(n) && n >= 0) {
+    console.log(
+      `OK: ${events.length}건을 shift_events에 반영했습니다. (rev=${n})`
+    );
+    process.exit(0);
+  }
+  await new Promise((r) => setTimeout(r, 60 + i * 30));
 }
 
-console.log(`OK: ${events.length}건을 shift_calendar_state(id=shared)에 반영했습니다.`);
+console.error("저장이 계속 충돌했습니다. 잠시 후 다시 실행하세요.");
+process.exit(1);

@@ -2,16 +2,32 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { ShiftEvent } from "./types";
 import { normalizeLoadedEvent } from "./eventLogic";
 
-const TABLE = "shift_calendar_state";
-const ROW_ID = "shared";
+const META_ID = "singleton";
+
+type ShiftEventRow = {
+  id: string;
+  type: string;
+  off_date: string | null;
+  start_iso: string | null;
+  end_iso: string | null;
+  title: string | null;
+  created_at: string;
+  updated_at: string;
+};
 
 let client: SupabaseClient | null = null;
 
-function normalizeEventsFromJson(raw: unknown): ShiftEvent[] {
-  if (!Array.isArray(raw)) return [];
-  return raw
-    .map((row) => normalizeLoadedEvent(row))
-    .filter((e): e is ShiftEvent => e !== null);
+function rowToShiftEvent(row: ShiftEventRow): ShiftEvent | null {
+  return normalizeLoadedEvent({
+    id: row.id,
+    type: row.type,
+    ...(row.off_date ? { date: row.off_date } : {}),
+    ...(row.start_iso ? { start: row.start_iso } : {}),
+    ...(row.end_iso ? { end: row.end_iso } : {}),
+    ...(row.title ? { title: row.title } : {}),
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  });
 }
 
 export function getSupabaseClient(): SupabaseClient | null {
@@ -34,43 +50,57 @@ function requireClient(): SupabaseClient {
   return c;
 }
 
-/**
- * 단일 행을 읽거나 없으면 생성 후 반환.
- */
+async function ensureMetaRow(sb: SupabaseClient): Promise<void> {
+  for (let i = 0; i < 5; i++) {
+    const { data, error } = await sb
+      .from("shift_calendar_meta")
+      .select("id")
+      .eq("id", META_ID)
+      .maybeSingle();
+    if (error) throw new Error(`Supabase 메타 읽기: ${error.message}`);
+    if (data) return;
+    const { error: ins } = await sb
+      .from("shift_calendar_meta")
+      .insert({ id: META_ID, rev: 0 });
+    if (!ins) return;
+    if (ins.code === "23505") continue;
+    throw new Error(`Supabase 메타 초기화: ${ins.message}`);
+  }
+  throw new Error("Supabase: shift_calendar_meta 행을 만들 수 없습니다.");
+}
+
 export async function supabaseFetchEvents(): Promise<{
   events: ShiftEvent[];
   rev: number;
 }> {
   const sb = requireClient();
-  for (let attempt = 0; attempt < 5; attempt++) {
-    const { data, error } = await sb
-      .from(TABLE)
-      .select("events, rev")
-      .eq("id", ROW_ID)
-      .maybeSingle();
-    if (error) {
-      throw new Error(`Supabase 읽기: ${error.message}`);
-    }
-    if (data) {
-      return {
-        events: normalizeEventsFromJson(data.events),
-        rev: Number(data.rev) || 0,
-      };
-    }
-    const { error: insErr } = await sb.from(TABLE).insert({
-      id: ROW_ID,
-      events: [],
-      rev: 0,
-    });
-    if (!insErr) {
-      return { events: [], rev: 0 };
-    }
-    if (insErr.code === "23505") {
-      continue;
-    }
-    throw new Error(`Supabase 초기화: ${insErr.message}`);
+  await ensureMetaRow(sb);
+
+  const [{ data: meta, error: metaErr }, { data: rows, error: rowErr }] =
+    await Promise.all([
+      sb.from("shift_calendar_meta").select("rev").eq("id", META_ID).single(),
+      sb
+        .from("shift_events")
+        .select(
+          "id, type, off_date, start_iso, end_iso, title, created_at, updated_at"
+        )
+        .order("id", { ascending: true }),
+    ]);
+
+  if (metaErr) {
+    throw new Error(`Supabase 메타: ${metaErr.message}`);
   }
-  throw new Error("Supabase: 저장 행을 준비하지 못했습니다.");
+  if (rowErr) {
+    throw new Error(`Supabase 일정 읽기: ${rowErr.message}`);
+  }
+
+  const rev = Number(meta?.rev) || 0;
+  const list = (rows ?? []) as ShiftEventRow[];
+  const events = list
+    .map((r) => rowToShiftEvent(r))
+    .filter((e): e is ShiftEvent => e !== null);
+
+  return { events, rev };
 }
 
 export type SaveResult =
@@ -82,18 +112,19 @@ export async function supabaseSaveEventsIfRev(
   expectedRev: number
 ): Promise<SaveResult> {
   const sb = requireClient();
-  const nextRev = expectedRev + 1;
-  const { data, error } = await sb
-    .from(TABLE)
-    .update({ events: next, rev: nextRev })
-    .eq("id", ROW_ID)
-    .eq("rev", expectedRev)
-    .select("rev");
+  const { data, error } = await sb.rpc("shift_replace_events", {
+    p_expected_rev: expectedRev,
+    p_events: next,
+  });
   if (error) {
     throw new Error(`Supabase 저장: ${error.message}`);
   }
-  if (!data?.length) {
+  const n = typeof data === "string" ? Number(data) : Number(data);
+  if (!Number.isFinite(n)) {
+    throw new Error("Supabase 저장: 알 수 없는 응답");
+  }
+  if (n < 0) {
     return { ok: false, conflict: true };
   }
-  return { ok: true, rev: Number(data[0].rev) || nextRev };
+  return { ok: true, rev: n };
 }

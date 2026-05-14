@@ -1,15 +1,5 @@
 import { useState, useEffect } from "react";
-import {
-  Sun,
-  Moon,
-  Armchair,
-  Sparkles,
-  Calendar,
-  Clock,
-  Check,
-  X,
-  Trash2,
-} from "lucide-react";
+import { Sun, Moon, Armchair, Sparkles, Check, X } from "lucide-react";
 import type { ShiftEvent } from "../types";
 import {
   createCustom,
@@ -143,53 +133,43 @@ export default function AddEventModal({
           <p className="modal-subtitle">{subtitleForKind(kind)}</p>
           <div className="field field--fancy">
             <label htmlFor="add-ymd">날짜</label>
-            <div className="field-input-wrap">
-              <input
-                id="add-ymd"
-                className="field-input-fancy"
-                type="date"
-                value={ymd}
-                onChange={(e) => {
-                  const next = e.target.value;
-                  setYmd(next);
-                  if (kind === "DAY") {
-                    const d = createDayShift(next);
-                    setStart(isoToDatetimeLocal(d.start!));
-                    setEnd(isoToDatetimeLocal(d.end!));
-                  } else if (kind === "NIGHT") {
-                    const n = createNightShift(next);
-                    setStart(isoToDatetimeLocal(n.start!));
-                    setEnd(isoToDatetimeLocal(n.end!));
-                  } else if (kind === "CUSTOM") {
-                    const c = createCustom(next, title || "데이트");
-                    setStart(isoToDatetimeLocal(c.start!));
-                    setEnd(isoToDatetimeLocal(c.end!));
-                  }
-                }}
-              />
-              <Calendar
-                className="field-input-suffix"
-                size={18}
-                strokeWidth={2}
-                aria-hidden
-              />
-            </div>
+            <input
+              id="add-ymd"
+              className="field-input-fancy"
+              type="date"
+              value={ymd}
+              onChange={(e) => {
+                const next = e.target.value;
+                setYmd(next);
+                if (kind === "DAY") {
+                  const d = createDayShift(next);
+                  setStart(isoToDatetimeLocal(d.start!));
+                  setEnd(isoToDatetimeLocal(d.end!));
+                } else if (kind === "NIGHT") {
+                  const n = createNightShift(next);
+                  setStart(isoToDatetimeLocal(n.start!));
+                  setEnd(isoToDatetimeLocal(n.end!));
+                } else if (kind === "CUSTOM") {
+                  const c = createCustom(next, title || "데이트");
+                  setStart(isoToDatetimeLocal(c.start!));
+                  setEnd(isoToDatetimeLocal(c.end!));
+                }
+              }}
+            />
           </div>
           {kind === "CUSTOM" && (
             <>
-              <div className="field field--fancy">
-                <label htmlFor="add-title">제목</label>
-                <div className="field-input-wrap">
-                  <input
-                    id="add-title"
-                    className="field-input-fancy"
-                    type="text"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="데이트"
-                  />
-                </div>
-              </div>
+            <div className="field field--fancy">
+              <label htmlFor="add-title">제목</label>
+              <input
+                id="add-title"
+                className="field-input-fancy"
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="데이트"
+              />
+            </div>
               <div className="title-chips">
                 <button
                   type="button"
@@ -212,50 +192,34 @@ export default function AddEventModal({
             <>
               <div className="field field--fancy">
                 <label htmlFor="add-start">시작</label>
-                <div className="field-input-wrap">
-                  <input
-                    id="add-start"
-                    className="field-input-fancy"
-                    type="datetime-local"
-                    value={start}
-                    onChange={(e) => setStart(e.target.value)}
-                  />
-                  <Clock
-                    className="field-input-suffix"
-                    size={18}
-                    strokeWidth={2}
-                    aria-hidden
-                  />
-                </div>
+                <input
+                  id="add-start"
+                  className="field-input-fancy"
+                  type="datetime-local"
+                  value={start}
+                  onChange={(e) => setStart(e.target.value)}
+                />
               </div>
               <div className="field field--fancy">
                 <label htmlFor="add-end">종료</label>
-                <div className="field-input-wrap">
-                  <input
-                    id="add-end"
-                    className="field-input-fancy"
-                    type="datetime-local"
-                    value={end}
-                    onChange={(e) => setEnd(e.target.value)}
-                  />
-                  <Clock
-                    className="field-input-suffix"
-                    size={18}
-                    strokeWidth={2}
-                    aria-hidden
-                  />
-                </div>
+                <input
+                  id="add-end"
+                  className="field-input-fancy"
+                  type="datetime-local"
+                  value={end}
+                  onChange={(e) => setEnd(e.target.value)}
+                />
               </div>
             </>
           )}
-          <div className="modal-ico-row">
+          <div className="modal-ico-row modal-ico-row--dual">
             <button
               type="button"
               className="modal-ico-btn modal-ico-btn--primary"
               aria-label="추가하기"
               onClick={submit}
             >
-              <Check size={24} strokeWidth={2.4} />
+              <Check size={22} strokeWidth={2.4} />
             </button>
             <button
               type="button"
@@ -263,16 +227,7 @@ export default function AddEventModal({
               aria-label="취소"
               onClick={onClose}
             >
-              <X size={24} strokeWidth={2.2} />
-            </button>
-            <button
-              type="button"
-              className="modal-ico-btn modal-ico-btn--danger modal-ico-btn--disabled"
-              aria-label="삭제"
-              disabled
-              title="새 일정에서는 삭제를 사용할 수 없습니다"
-            >
-              <Trash2 size={22} strokeWidth={2.1} />
+              <X size={22} strokeWidth={2.2} />
             </button>
           </div>
         </div>

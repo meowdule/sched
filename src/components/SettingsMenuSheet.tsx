@@ -82,7 +82,7 @@ export default function SettingsMenuSheet({
             className="settings-pill settings-pill--custom"
             onClick={onCustom}
           >
-            <Sparkles size={18} strokeWidth={2.1} className="settings-pill-ico" />
+            <Sparkles size={15} strokeWidth={2.2} className="settings-pill-ico" />
             <span>일정</span>
           </button>
           <button
@@ -90,7 +90,7 @@ export default function SettingsMenuSheet({
             className="settings-pill settings-pill--cycle"
             onClick={onCycle}
           >
-            <Repeat size={18} strokeWidth={2.1} className="settings-pill-ico" />
+            <Repeat size={15} strokeWidth={2.2} className="settings-pill-ico" />
             <span>주기</span>
           </button>
         </div>

@@ -4,7 +4,6 @@ import {
   Moon,
   Armchair,
   Sparkles,
-  Clock,
   Check,
   X,
   Trash2,
@@ -118,68 +117,48 @@ export default function EventEditor({
           {isOff ? (
             <div className="field field--fancy">
               <label htmlFor="off-date">날짜</label>
-              <div className="field-input-wrap">
-                <input
-                  id="off-date"
-                  className="field-input-fancy"
-                  type="date"
-                  value={offDate}
-                  onChange={(e) => setOffDate(e.target.value)}
-                />
-              </div>
+              <input
+                id="off-date"
+                className="field-input-fancy"
+                type="date"
+                value={offDate}
+                onChange={(e) => setOffDate(e.target.value)}
+              />
             </div>
           ) : (
             <>
               {isCustom && (
                 <div className="field field--fancy">
                   <label htmlFor="ev-title">제목</label>
-                  <div className="field-input-wrap">
-                    <input
-                      id="ev-title"
-                      className="field-input-fancy"
-                      type="text"
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
-                      placeholder="데이트"
-                    />
-                  </div>
+                  <input
+                    id="ev-title"
+                    className="field-input-fancy"
+                    type="text"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="데이트"
+                  />
                 </div>
               )}
               <div className="field field--fancy">
                 <label htmlFor="ev-start">시작</label>
-                <div className="field-input-wrap">
-                  <input
-                    id="ev-start"
-                    className="field-input-fancy"
-                    type="datetime-local"
-                    value={start}
-                    onChange={(e) => setStart(e.target.value)}
-                  />
-                  <Clock
-                    className="field-input-suffix"
-                    size={18}
-                    strokeWidth={2}
-                    aria-hidden
-                  />
-                </div>
+                <input
+                  id="ev-start"
+                  className="field-input-fancy"
+                  type="datetime-local"
+                  value={start}
+                  onChange={(e) => setStart(e.target.value)}
+                />
               </div>
               <div className="field field--fancy">
                 <label htmlFor="ev-end">종료</label>
-                <div className="field-input-wrap">
-                  <input
-                    id="ev-end"
-                    className="field-input-fancy"
-                    type="datetime-local"
-                    value={end}
-                    onChange={(e) => setEnd(e.target.value)}
-                  />
-                  <Clock
-                    className="field-input-suffix"
-                    size={18}
-                    strokeWidth={2}
-                    aria-hidden
-                  />
-                </div>
+                <input
+                  id="ev-end"
+                  className="field-input-fancy"
+                  type="datetime-local"
+                  value={end}
+                  onChange={(e) => setEnd(e.target.value)}
+                />
               </div>
             </>
           )}

@@ -352,23 +352,23 @@ button {
   display: flex;
   justify-content: center;
   gap: 10px;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
 .settings-kind-card {
   width: 105px;
   flex-shrink: 0;
-  min-height: 108px;
-  padding: 12px 8px 14px;
+  min-height: 104px;
+  padding: 14px 8px 12px;
   border-radius: 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 10px;
   border: 1.5px solid var(--line);
-  background: linear-gradient(180deg, #fafafa 0%, #f3f3f3 100%);
-  box-shadow: 0 2px 8px rgb(0 0 0 / 4%);
+  background: linear-gradient(180deg, #fafafa 0%, #f0f0f0 100%);
+  box-shadow: 0 2px 10px rgb(0 0 0 / 5%);
   color: var(--text);
 }
 
@@ -377,53 +377,68 @@ button {
 }
 
 .settings-kind-card--day {
-  background: linear-gradient(180deg, #fff8f0 0%, #ffedd5 100%);
-  border-color: #fdba74;
+  background: linear-gradient(165deg, #fffbeb 0%, #fef3c7 45%, #fde68a 100%);
+  border-color: #fbbf24;
 }
 
 .settings-kind-card--night {
-  background: linear-gradient(180deg, #f5f3ff 0%, #ede9fe 100%);
-  border-color: #c4b5fd;
+  background: linear-gradient(165deg, #f5f3ff 0%, #ede9fe 50%, #ddd6fe 100%);
+  border-color: #a78bfa;
 }
 
 .settings-kind-card--off {
-  background: linear-gradient(180deg, #ecfdf5 0%, #d1fae5 100%);
-  border-color: #6ee7b7;
+  background: linear-gradient(165deg, #ecfdf5 0%, #d1fae5 50%, #a7f3d0 100%);
+  border-color: #34d399;
 }
 
 .settings-kind-card-icon {
   display: grid;
   place-items: center;
-  color: inherit;
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 8%));
+}
+
+.settings-kind-card--day .settings-kind-card-icon {
+  color: #ea580c;
+}
+
+.settings-kind-card--night .settings-kind-card-icon {
+  color: #4f46e5;
+}
+
+.settings-kind-card--off .settings-kind-card-icon {
+  color: #059669;
 }
 
 .settings-kind-card-label {
-  font-size: 0.92rem;
+  font-size: 0.9rem;
   font-weight: 700;
   letter-spacing: -0.02em;
 }
 
 .settings-pill-row {
   display: flex;
-  gap: 10px;
-  margin-bottom: 16px;
+  gap: 8px;
+  margin: 0 auto 14px;
+  max-width: calc(105px * 3 + 10px * 2);
+  width: 100%;
 }
 
 .settings-pill {
   flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 13px 14px;
-  border-radius: 999px;
-  font-size: 0.92rem;
+  gap: 5px;
+  padding: 8px 8px;
+  border-radius: 12px;
+  font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: -0.02em;
   border: 1.5px solid #d4a574;
-  background: linear-gradient(180deg, #fffbf5 0%, #fff1e0 100%);
-  color: #92400e;
-  box-shadow: 0 2px 10px rgb(212 165 116 / 22%);
+  background: linear-gradient(180deg, #fffbf5 0%, #ffedd5 100%);
+  color: #9a3412;
+  box-shadow: 0 1px 6px rgb(217 119 6 / 15%);
 }
 
 .settings-pill:active {
@@ -431,21 +446,30 @@ button {
 }
 
 .settings-pill--custom {
-  border-color: #d4a574;
-  background: linear-gradient(180deg, #fffbf5 0%, #fff1e0 100%);
-  color: #92400e;
+  border-color: #f59e0b;
+  background: linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%);
+  color: #b45309;
 }
 
 .settings-pill--cycle {
-  border-color: #c4b5fd;
-  background: linear-gradient(180deg, #faf5ff 0%, #f3e8ff 100%);
-  color: #6b21a8;
-  box-shadow: 0 2px 10px rgb(167 139 250 / 22%);
+  border-color: #a78bfa;
+  background: linear-gradient(180deg, #faf5ff 0%, #ede9fe 100%);
+  color: #5b21b6;
+  box-shadow: 0 1px 6px rgb(139 92 246 / 18%);
+}
+
+.settings-pill--cycle .settings-pill-ico {
+  color: #6d28d9;
+}
+
+.settings-pill--custom .settings-pill-ico {
+  color: #d97706;
 }
 
 .settings-pill-ico {
   flex-shrink: 0;
-  opacity: 0.92;
+  width: 15px;
+  height: 15px;
 }
 
 .settings-footer-link {
@@ -459,6 +483,11 @@ button {
   font-weight: 600;
   color: var(--muted);
   border-radius: 12px;
+}
+
+.settings-footer-link svg {
+  color: #64748b;
+  opacity: 0.9;
 }
 
 .settings-footer-link:active {
@@ -644,7 +673,7 @@ button {
 .field-input-fancy {
   width: 100%;
   font: inherit;
-  padding: 11px 42px 11px 12px;
+  padding: 11px 12px;
   border-radius: 14px;
   border: 1px solid var(--line);
   background: #fafafa;
@@ -671,28 +700,33 @@ button {
 
 .modal-ico-row {
   display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 22px;
+  justify-content: stretch;
+  align-items: stretch;
+  gap: 10px;
   margin-top: 20px;
   padding-top: 4px;
 }
 
+.modal-ico-row--dual .modal-ico-btn {
+  flex: 1;
+  max-width: none;
+}
+
 .modal-ico-btn {
-  width: 54px;
-  height: 54px;
-  border-radius: 50%;
+  flex: 1;
+  min-width: 0;
+  min-height: 48px;
+  border-radius: 12px;
   display: grid;
   place-items: center;
-  flex-shrink: 0;
   transition:
     transform 0.12s ease,
     filter 0.12s ease;
-  box-shadow: 0 4px 14px rgb(0 0 0 / 10%);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 8%);
 }
 
 .modal-ico-btn:active:not(:disabled) {
-  transform: scale(0.94);
+  transform: scale(0.98);
 }
 
 .modal-ico-btn--primary {
@@ -721,6 +755,12 @@ button {
   opacity: 0.38;
   cursor: not-allowed;
   box-shadow: none;
+}
+
+/* 네이티브 date/datetime 아이콘만 사용 — 우측 패딩은 브라우저 피커에 맡김 */
+.field-input-fancy[type="date"],
+.field-input-fancy[type="datetime-local"] {
+  min-height: 44px;
 }
 
 .modal-title {
@@ -1041,9 +1081,7 @@ button {
   transition:
     transform 0.14s ease,
     filter 0.14s ease;
-  box-shadow:
-    0 4px 14px rgb(0 0 0 / 8%),
-    inset 0 1px 0 rgb(255 255 255 / 55%);
+  box-shadow: 0 2px 10px rgb(0 0 0 / 7%);
 }
 
 .day-pastel-btn:active {
@@ -1051,53 +1089,28 @@ button {
 }
 
 .day-pastel-btn--sun {
-  background: radial-gradient(
-      circle at 30% 25%,
-      rgb(255 255 255 / 75%) 0%,
-      transparent 45%
-    ),
-    linear-gradient(160deg, #ffe8d5, #fdba74);
-  color: #c2410c;
+  background: linear-gradient(155deg, #fed7aa 0%, #fb923c 55%, #f97316 100%);
+  color: #7c2d12;
 }
 
 .day-pastel-btn--moon {
-  background: radial-gradient(
-      circle at 30% 25%,
-      rgb(255 255 255 / 65%) 0%,
-      transparent 45%
-    ),
-    linear-gradient(160deg, #e0e7ff, #a5b4fc);
+  background: linear-gradient(155deg, #e0e7ff 0%, #a5b4fc 55%, #818cf8 100%);
   color: #312e81;
 }
 
 .day-pastel-btn--rest {
-  background: radial-gradient(
-      circle at 30% 25%,
-      rgb(255 255 255 / 65%) 0%,
-      transparent 45%
-    ),
-    linear-gradient(160deg, #d1fae5, #6ee7b7);
-  color: #065f46;
+  background: linear-gradient(155deg, #bbf7d0 0%, #4ade80 50%, #22c55e 100%);
+  color: #14532d;
 }
 
 .day-pastel-btn--cycle {
-  background: radial-gradient(
-      circle at 30% 25%,
-      rgb(255 255 255 / 65%) 0%,
-      transparent 45%
-    ),
-    linear-gradient(160deg, #ede9fe, #c4b5fd);
-  color: #5b21b6;
+  background: linear-gradient(155deg, #ddd6fe 0%, #c4b5fd 55%, #a78bfa 100%);
+  color: #4c1d95;
 }
 
 .day-pastel-btn--custom {
-  background: radial-gradient(
-      circle at 30% 25%,
-      rgb(255 255 255 / 65%) 0%,
-      transparent 45%
-    ),
-    linear-gradient(160deg, #ffe4e6, #fda4af);
-  color: #9f1239;
+  background: linear-gradient(155deg, #fecdd3 0%, #fb7185 50%, #f43f5e 100%);
+  color: #881337;
 }
 
 .day-bottom-bar-body {

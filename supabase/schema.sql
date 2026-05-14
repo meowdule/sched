@@ -87,7 +87,8 @@ begin
     return -1;
   end if;
 
-  delete from public.shift_events;
+  -- Supabase 등에서 무조건 DELETE 금지 시 WHERE 필요
+  delete from public.shift_events where true;
 
   insert into public.shift_events (
     id, type, off_date, start_iso, end_iso, title, created_at, updated_at

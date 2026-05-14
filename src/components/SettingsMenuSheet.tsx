@@ -1,3 +1,5 @@
+import { Sun, Moon, Armchair, Sparkles, Repeat, Settings } from "lucide-react";
+
 type Props = {
   open: boolean;
   onClose: () => void;
@@ -7,7 +9,7 @@ type Props = {
   onCustom: () => void;
   onCycle: () => void;
   onGithub: () => void;
-  /** 기본: 토큰 · 저장소 설정 */
+  /** 기본: 저장소 설정 */
   settingsLinkLabel?: string;
 };
 
@@ -20,7 +22,7 @@ export default function SettingsMenuSheet({
   onCustom,
   onCycle,
   onGithub,
-  settingsLinkLabel = "토큰 · 저장소 설정",
+  settingsLinkLabel = "저장소 설정",
 }: Props) {
   if (!open) return null;
 
@@ -32,28 +34,73 @@ export default function SettingsMenuSheet({
         aria-label="닫기"
         onClick={onClose}
       />
-      <div className="sheet sheet--settings-menu" role="dialog" aria-modal="true">
+      <div
+        className="sheet sheet--settings-menu sheet--settings-v2"
+        role="dialog"
+        aria-modal="true"
+      >
         <div className="sheet-handle" />
-        <div className="sheet-title">추가 · 설정</div>
-        <div className="settings-menu-grid">
-          <button type="button" className="settings-menu-btn" onClick={onDay}>
-            주간
+        <div className="settings-sheet-heading">
+          <div className="settings-sheet-title">추가 · 설정</div>
+          <div className="settings-sheet-sub">근무 유형을 선택하세요</div>
+        </div>
+        <div className="settings-kind-cards">
+          <button
+            type="button"
+            className="settings-kind-card settings-kind-card--day"
+            onClick={onDay}
+          >
+            <span className="settings-kind-card-icon" aria-hidden>
+              <Sun size={26} strokeWidth={2} />
+            </span>
+            <span className="settings-kind-card-label">주간</span>
           </button>
-          <button type="button" className="settings-menu-btn" onClick={onNight}>
-            야간
+          <button
+            type="button"
+            className="settings-kind-card settings-kind-card--night"
+            onClick={onNight}
+          >
+            <span className="settings-kind-card-icon" aria-hidden>
+              <Moon size={26} strokeWidth={2} />
+            </span>
+            <span className="settings-kind-card-label">야간</span>
           </button>
-          <button type="button" className="settings-menu-btn" onClick={onOff}>
-            비번
+          <button
+            type="button"
+            className="settings-kind-card settings-kind-card--off"
+            onClick={onOff}
+          >
+            <span className="settings-kind-card-icon" aria-hidden>
+              <Armchair size={26} strokeWidth={2} />
+            </span>
+            <span className="settings-kind-card-label">비번</span>
           </button>
         </div>
-        <button type="button" className="settings-menu-custom" onClick={onCustom}>
-          일정
-        </button>
-        <button type="button" className="cycle-btn" onClick={onCycle}>
-          주기
-        </button>
-        <button type="button" className="settings-menu-token" onClick={onGithub}>
-          {settingsLinkLabel}
+        <div className="settings-pill-row">
+          <button
+            type="button"
+            className="settings-pill settings-pill--custom"
+            onClick={onCustom}
+          >
+            <Sparkles size={18} strokeWidth={2.1} className="settings-pill-ico" />
+            <span>일정</span>
+          </button>
+          <button
+            type="button"
+            className="settings-pill settings-pill--cycle"
+            onClick={onCycle}
+          >
+            <Repeat size={18} strokeWidth={2.1} className="settings-pill-ico" />
+            <span>주기</span>
+          </button>
+        </div>
+        <button
+          type="button"
+          className="settings-footer-link"
+          onClick={onGithub}
+        >
+          <Settings size={16} strokeWidth={2} aria-hidden />
+          <span>{settingsLinkLabel}</span>
         </button>
       </div>
     </>

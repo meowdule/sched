@@ -140,6 +140,15 @@ export function ymDsInMonth(year: number, month1: number): string[] {
   return list;
 }
 
+/** 서울 달력 날짜의 요일 (예: 목요일) */
+export function seoulWeekdayLongKo(ymd: string): string {
+  const d = parseISO(`${ymd}T12:00:00+09:00`);
+  return new Intl.DateTimeFormat("ko-KR", {
+    timeZone: "Asia/Seoul",
+    weekday: "long",
+  }).format(d);
+}
+
 /** 0 = Sunday … 6 = Saturday (Seoul wall date ymd) */
 export function seoulWeekday(ymd: string): number {
   const d = parseISO(`${ymd}T12:00:00+09:00`);

@@ -7,6 +7,8 @@ type Props = {
   onCustom: () => void;
   onCycle: () => void;
   onGithub: () => void;
+  /** 기본: 토큰 · 저장소 설정 */
+  settingsLinkLabel?: string;
 };
 
 export default function SettingsMenuSheet({
@@ -18,6 +20,7 @@ export default function SettingsMenuSheet({
   onCustom,
   onCycle,
   onGithub,
+  settingsLinkLabel = "토큰 · 저장소 설정",
 }: Props) {
   if (!open) return null;
 
@@ -50,7 +53,7 @@ export default function SettingsMenuSheet({
           주기
         </button>
         <button type="button" className="settings-menu-token" onClick={onGithub}>
-          토큰 · 저장소 설정
+          {settingsLinkLabel}
         </button>
       </div>
     </>

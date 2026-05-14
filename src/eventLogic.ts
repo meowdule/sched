@@ -210,6 +210,29 @@ export function markerTypesForDay(
   return MARKER_ORDER.filter((t) => found.has(t));
 }
 
+/**
+ * 빠른 추가(주간·야간·비번)와 동일한 날·같은 유형이 이미 있는지.
+ * CUSTOM은 같은 날 여러 개 허용.
+ */
+export function isDuplicateQuickAdd(
+  events: ShiftEvent[],
+  ev: ShiftEvent
+): boolean {
+  if (ev.type === "CUSTOM") return false;
+  if (ev.type === "OFF") {
+    if (!ev.date) return false;
+    return events.some((e) => e.type === "OFF" && e.date === ev.date);
+  }
+  if (!ev.start) return false;
+  const anchor = seoulYmd(parseISO(ev.start));
+  return events.some((e) => {
+    if (e.type !== ev.type) return false;
+    if (e.type !== "DAY" && e.type !== "NIGHT") return false;
+    if (!e.start) return false;
+    return seoulYmd(parseISO(e.start)) === anchor;
+  });
+}
+
 export function hasOverlapInRange(
   events: ShiftEvent[],
   startYmd: string,

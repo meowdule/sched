@@ -1,13 +1,19 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Settings } from "lucide-react";
 import type { GitHubConfig, ShiftEvent } from "./types";
 import { fetchRepoFileJson, saveRepoFileJson } from "./github";
+import {
+  isSupabaseConfigured,
+  supabaseFetchEvents,
+  supabaseSaveEventsIfRev,
+} from "./supabaseStore";
 import {
   buildCycleEvents,
   createDayShift,
   createNightShift,
   createOff,
   hasOverlapInRange,
+  isDuplicateQuickAdd,
   normalizeLoadedEvent,
   seoulYmd,
 } from "./eventLogic";
@@ -108,10 +114,28 @@ export default function App() {
   const [addKind, setAddKind] = useState<AddEventKind | null>(null);
 
   const cfg = useMemo(() => toCfg(settings), [settings]);
+  const dbMode = useMemo(() => isSupabaseConfigured(), []);
+  const canPersist = dbMode || cfg !== null;
 
   const defaultPickYmd = selected ?? seoulYmd(new Date());
 
   const refresh = useCallback(async () => {
+    if (dbMode) {
+      setLoading(true);
+      setErr(null);
+      try {
+        const { events: list } = await supabaseFetchEvents();
+        setEvents(list);
+        setSha(null);
+      } catch (e) {
+        setErr(e instanceof Error ? e.message : String(e));
+        setEvents([]);
+        setSha(null);
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
     const c = toCfg(settings);
     if (!c) {
       setEvents([]);
@@ -135,14 +159,59 @@ export default function App() {
     } finally {
       setLoading(false);
     }
-  }, [settings]);
+  }, [settings, dbMode]);
 
   useEffect(() => {
     void refresh();
   }, [refresh]);
 
-  const persist = useCallback(
+  /** GitHub 저장은 GET→PUT 한 세트씩만 이어 붙여야 409·재시도 폭주를 막을 수 있음 */
+  const persistTailRef = useRef<Promise<unknown>>(Promise.resolve());
+
+  const executePersist = useCallback(
     async (update: EventsUpdater, message: string): Promise<boolean> => {
+      if (dbMode) {
+        setLoading(true);
+        setErr(null);
+        const maxAttempts = 12;
+        try {
+          for (let attempt = 0; attempt < maxAttempts; attempt++) {
+            const { events: draft, rev } = await supabaseFetchEvents();
+            let next: ShiftEvent[];
+            try {
+              next = update(draft);
+            } catch (err) {
+              if (err instanceof Error && err.message === "PERSIST_ABORT") {
+                return false;
+              }
+              throw err;
+            }
+            const result = await supabaseSaveEventsIfRev(next, rev);
+            if (result.ok) {
+              setEvents(next);
+              setSha(null);
+              return true;
+            }
+            if (attempt < maxAttempts - 1) {
+              await new Promise((r) => setTimeout(r, 40 + attempt * 25));
+            }
+          }
+          const { events: fresh } = await supabaseFetchEvents();
+          setEvents(fresh);
+          alert(
+            "저장이 계속 겹쳤습니다. 화면은 최신으로 맞춰 두었으니 잠시 후 다시 눌러 주세요."
+          );
+          return false;
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          setErr(msg);
+          alert(msg);
+          return false;
+        } finally {
+          setLoading(false);
+        }
+      }
+
       const c = toCfg(settings);
       if (!c) {
         alert("설정(토큰 · 저장소)에서 GitHub 정보를 입력해 주세요.");
@@ -150,7 +219,7 @@ export default function App() {
       }
       setLoading(true);
       setErr(null);
-      const maxAttempts = 6;
+      const maxAttempts = 12;
       try {
         for (let attempt = 0; attempt < maxAttempts; attempt++) {
           const { data, sha: blobSha } = await fetchRepoFileJson<unknown>(c);
@@ -174,6 +243,11 @@ export default function App() {
             return true;
           } catch (e) {
             if (e instanceof Error && e.message === "CONFLICT") {
+              if (attempt < maxAttempts - 1) {
+                await new Promise((r) =>
+                  setTimeout(r, 80 + attempt * 40)
+                );
+              }
               continue;
             }
             throw e;
@@ -197,7 +271,17 @@ export default function App() {
         setLoading(false);
       }
     },
-    [settings]
+    [settings, dbMode]
+  );
+
+  const persist = useCallback(
+    async (update: EventsUpdater, message: string): Promise<boolean> => {
+      const run = executePersist(update, message);
+      const chained = persistTailRef.current.then(() => run);
+      persistTailRef.current = chained.catch(() => {});
+      return chained;
+    },
+    [executePersist]
   );
 
   const onPrevMonth = () => {
@@ -223,7 +307,15 @@ export default function App() {
   };
 
   const handleAdd = async (ev: ShiftEvent) => {
-    await persist((d) => [...d, ev], "일정 추가");
+    await persist((d) => {
+      if (isDuplicateQuickAdd(d, ev)) {
+        alert(
+          "같은 날짜에 같은 종류의 일정이 이미 있어 추가할 수 없습니다."
+        );
+        throw new Error("PERSIST_ABORT");
+      }
+      return [...d, ev];
+    }, "일정 추가");
   };
 
   const handleSaveEdit = async (ev: ShiftEvent) => {
@@ -273,10 +365,10 @@ export default function App() {
           {err}
         </p>
       )}
-      {!cfg && (
+      {!canPersist && (
         <p className="hint" style={{ marginBottom: 10 }}>
-          톱니바퀴 → 「토큰 · 저장소 설정」에서 GitHub 토큰을 넣으면 이 기기에서
-          바로 저장됩니다.
+          빌드에 Supabase URL·anon 키가 없으면, 톱니바퀴 → 「토큰 · 저장소 설정」에서
+          GitHub 토큰을 넣어 이 기기에서 저장할 수 있습니다.
         </p>
       )}
       <div className="app-main">
@@ -317,6 +409,9 @@ export default function App() {
       <SettingsMenuSheet
         open={settingsMenuOpen}
         onClose={() => setSettingsMenuOpen(false)}
+        settingsLinkLabel={
+          dbMode ? "Supabase · 저장 안내" : "토큰 · 저장소 설정"
+        }
         onDay={() => {
           setSettingsMenuOpen(false);
           setAddKind("DAY");
@@ -353,6 +448,7 @@ export default function App() {
         open={settingsOpen}
         value={settings}
         defaults={defaults}
+        storage={dbMode ? "supabase" : "github"}
         onClose={() => setSettingsOpen(false)}
         onSave={(s) => {
           writeStoredSettings(s);

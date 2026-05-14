@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "build:ci": "vite build",
     "typecheck": "tsc -b --noEmit",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "seed:supabase": "node --env-file=.env ./scripts/seed-supabase-from-json.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.105.4",

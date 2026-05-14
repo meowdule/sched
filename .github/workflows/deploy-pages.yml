@@ -1,3 +1,8 @@
+# Pages 배포는 보통 25~50초 정도가 흔합니다.
+# - 러너 시작·checkout·npm ci(캐시 미스 시 더 김)·빌드·아티팩트 업로드
+# - deploy 잡이 별도 VM에서 Pages API까지 처리
+# CI에서는 tsc 생략(vite만)으로 로컬 `npm run build`보다 조금 단축합니다.
+
 name: Deploy to GitHub Pages
 
 on:
@@ -18,12 +23,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: npm
       - name: Install and build
-        run: npm ci && npm run build
+        run: npm ci && npm run build:ci
         env:
           VITE_BASE: /${{ github.event.repository.name }}/
           VITE_GITHUB_OWNER: ${{ github.repository_owner }}

@@ -13,7 +13,17 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, "..");
 
-const url = (process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "").trim();
+function normalizeSupabaseUrl(raw) {
+  let u = String(raw).trim();
+  if (!u) return u;
+  u = u.replace(/\/+$/, "");
+  u = u.replace(/\/rest\/v1\/?$/i, "");
+  return u.replace(/\/+$/, "");
+}
+
+const url = normalizeSupabaseUrl(
+  (process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "").trim()
+);
 const key = (
   process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || ""
 ).trim();

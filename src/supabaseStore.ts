@@ -4,6 +4,15 @@ import { normalizeLoadedEvent } from "./eventLogic";
 
 const META_ID = "singleton";
 
+/** REST 베이스 URL을 Project URL로 맞춤 (/rest/v1 포함 시 제거) */
+export function normalizeSupabaseUrl(raw: string): string {
+  let u = raw.trim();
+  if (!u) return u;
+  u = u.replace(/\/+$/, "");
+  u = u.replace(/\/rest\/v1\/?$/i, "");
+  return u.replace(/\/+$/, "");
+}
+
 type ShiftEventRow = {
   id: string;
   type: string;
@@ -14,8 +23,6 @@ type ShiftEventRow = {
   created_at: string;
   updated_at: string;
 };
-
-let client: SupabaseClient | null = null;
 
 function rowToShiftEvent(row: ShiftEventRow): ShiftEvent | null {
   return normalizeLoadedEvent({
@@ -30,13 +37,22 @@ function rowToShiftEvent(row: ShiftEventRow): ShiftEvent | null {
   });
 }
 
+let client: SupabaseClient | null = null;
+let clientCacheKey = "";
+
 export function getSupabaseClient(): SupabaseClient | null {
-  const url = (import.meta.env.VITE_SUPABASE_URL as string | undefined)?.trim();
+  const raw = (import.meta.env.VITE_SUPABASE_URL as string | undefined)?.trim();
   const key = (
     import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
   )?.trim();
-  if (!url || !key) return null;
-  if (!client) client = createClient(url, key);
+  if (!raw || !key) return null;
+  const url = normalizeSupabaseUrl(raw);
+  if (!url) return null;
+  const cacheKey = `${url}\0${key}`;
+  if (!client || clientCacheKey !== cacheKey) {
+    client = createClient(url, key);
+    clientCacheKey = cacheKey;
+  }
   return client;
 }
 

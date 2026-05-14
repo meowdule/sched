@@ -1,30 +1,39 @@
 -- =============================================================================
--- Shift calendar — Supabase 스키마 (앱은 이 DB만 사용, GitHub JSON은 사용 안 함)
--- SQL Editor에서 위에서 아래 순서로 한 번에 실행하세요.
+-- Shift calendar — Supabase 스키마 (최신 전체)
+--
+-- SQL Editor에서 통째로 실행하세요.
+-- ⚠ 재실행 시 shift_events·메타가 드롭되어 일정 데이터는 모두 사라집니다.
+--    (초기 구축·스키마 갱신용. 운영 중이면 백업 후 실행)
 -- =============================================================================
 
--- 이전 단일 JSON 테이블(있다면 제거)
-drop policy if exists "shift_calendar_select" on public.shift_calendar_state;
-drop policy if exists "shift_calendar_insert" on public.shift_calendar_state;
-drop policy if exists "shift_calendar_update" on public.shift_calendar_state;
+begin;
+
+-- ---------------------------------------------------------------------------
+-- 0) 이전 객체 제거 (의존 순서: RPC → 일정 테이블 → 메타 → 레거시 JSON 테이블)
+-- ---------------------------------------------------------------------------
+drop function if exists public.shift_replace_events(bigint, jsonb);
+
+drop table if exists public.shift_events cascade;
+drop table if exists public.shift_calendar_meta cascade;
+
+-- 레거시 JSON 한 줄 테이블 (있으면 정책·테이블 함께 제거)
 drop table if exists public.shift_calendar_state cascade;
 
 -- ---------------------------------------------------------------------------
--- 낙관적 잠금용 메타(단일 행)
+-- 1) 낙관적 잠금 메타 (단일 행 id = singleton)
 -- ---------------------------------------------------------------------------
-create table if not exists public.shift_calendar_meta (
+create table public.shift_calendar_meta (
   id text primary key,
   rev bigint not null default 0
 );
 
 insert into public.shift_calendar_meta (id, rev)
-values ('singleton', 0)
-on conflict (id) do nothing;
+values ('singleton', 0);
 
 -- ---------------------------------------------------------------------------
--- 일정 한 건당 한 행 (앱 ShiftEvent 필드와 1:1)
+-- 2) 일정 한 건 = 한 행 (앱 ShiftEvent 와 1:1)
 -- ---------------------------------------------------------------------------
-create table if not exists public.shift_events (
+create table public.shift_events (
   id text primary key,
   type text not null,
   off_date text null,
@@ -36,36 +45,37 @@ create table if not exists public.shift_events (
   constraint shift_events_type_ck check (type in ('DAY', 'NIGHT', 'OFF', 'CUSTOM'))
 );
 
-create index if not exists shift_events_off_date_idx
-  on public.shift_events (off_date) where off_date is not null;
-create index if not exists shift_events_start_idx
-  on public.shift_events (start_iso) where start_iso is not null;
+create index shift_events_off_date_idx
+  on public.shift_events (off_date)
+  where off_date is not null;
+
+create index shift_events_start_idx
+  on public.shift_events (start_iso)
+  where start_iso is not null;
 
 -- ---------------------------------------------------------------------------
--- RLS: 읽기는 anon, 쓰기는 RPC만 (직접 INSERT/DELETE 막아 유지보수 단일 경로)
+-- 3) RLS — 읽기만 anon; 일정 변경은 RPC 한 경로
 -- ---------------------------------------------------------------------------
 alter table public.shift_calendar_meta enable row level security;
 alter table public.shift_events enable row level security;
 
-drop policy if exists "shift_meta_select" on public.shift_calendar_meta;
 create policy "shift_meta_select"
   on public.shift_calendar_meta for select
   using (true);
 
-drop policy if exists "shift_meta_insert_singleton" on public.shift_calendar_meta;
 create policy "shift_meta_insert_singleton"
   on public.shift_calendar_meta for insert
   with check (id = 'singleton');
 
-drop policy if exists "shift_events_select" on public.shift_events;
 create policy "shift_events_select"
   on public.shift_events for select
   using (true);
 
 -- ---------------------------------------------------------------------------
--- 원자적 전체 교체 + rev 증가 (충돌 시 -1 반환)
+-- 4) 원자적 전체 교체 + rev 증가 (rev 불일치 시 -1)
+--    DELETE 에 WHERE true — Supabase “DELETE requires WHERE” 가드 대응
 -- ---------------------------------------------------------------------------
-create or replace function public.shift_replace_events(
+create function public.shift_replace_events(
   p_expected_rev bigint,
   p_events jsonb
 )
@@ -87,7 +97,6 @@ begin
     return -1;
   end if;
 
-  -- Supabase 등에서 무조건 DELETE 금지 시 WHERE 필요
   delete from public.shift_events where true;
 
   insert into public.shift_events (
@@ -122,7 +131,12 @@ $$;
 comment on function public.shift_replace_events(bigint, jsonb) is
   '일정 전체를 JSON 배열로 교체하고 rev를 1 올립니다. rev 불일치 시 -1.';
 
+-- ---------------------------------------------------------------------------
+-- 5) 권한 (anon / authenticated — 가족·팀용 공개 anon 키 전제)
+-- ---------------------------------------------------------------------------
 grant select on table public.shift_calendar_meta to anon, authenticated;
 grant insert on table public.shift_calendar_meta to anon, authenticated;
 grant select on table public.shift_events to anon, authenticated;
 grant execute on function public.shift_replace_events(bigint, jsonb) to anon, authenticated;
+
+commit;
